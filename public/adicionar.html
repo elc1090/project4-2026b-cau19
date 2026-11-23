@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adicionar questão · Gabarito</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body data-page="adicionar">
+  <header class="topbar" id="topbar"></header>
+
+  <main class="container">
+    <div class="page-header">
+      <div>
+        <h1 id="page-title">Adicionar questão</h1>
+        <p class="muted" id="page-subtitle">Envie o print de uma questão: a IA preenche o formulário e você revisa antes de salvar.</p>
+      </div>
+    </div>
+
+    <!-- PASSO 1: imagem -->
+    <section id="upload-section" class="card upload-card">
+      <!-- O <label> envolve o <input type="file">: clicar em qualquer parte abre a escolha de arquivo -->
+      <label id="dropzone" class="dropzone">
+        <input type="file" id="file-input" accept="image/png,image/jpeg,image/webp" hidden />
+        <span class="dropzone-empty" id="dropzone-empty">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v4h16v-4"/></svg>
+          <strong>Clique para escolher, arraste ou cole (Ctrl+V) um print</strong>
+          <span class="muted small">PNG, JPG ou WEBP. A imagem é usada só para a leitura e não fica guardada.</span>
+        </span>
+        <img id="preview" alt="Prévia da imagem enviada" hidden />
+      </label>
+      <div class="upload-actions">
+        <button type="button" class="btn btn-primary" id="process-button" disabled>Processar com IA</button>
+        <button type="button" class="btn btn-ghost" id="manual-button">Preencher manualmente</button>
+        <span id="process-status" class="status" role="status"></span>
+      </div>
+    </section>
+
+    <!-- PASSO 2: revisão (formulário) -->
+    <form id="question-form" class="card form" hidden novalidate>
+      <p id="ai-notice" class="notice notice-warn" hidden></p>
+
+      <label class="field">
+        <span>Enunciado *</span>
+        <textarea name="statement" rows="8" maxlength="10000" class="statement-input"></textarea>
+      </label>
+
+      <fieldset class="field">
+        <legend>Alternativas * <span class="field-hint">(de 2 a 5; questões Certo/Errado: A = Certo, B = Errado)</span></legend>
+        <div id="alternatives"></div>
+        <div><button type="button" class="btn btn-small" id="add-alternative">+ Alternativa</button></div>
+      </fieldset>
+
+      <div class="field-grid">
+        <label class="field">
+          <span>Gabarito</span>
+          <select name="correct_letter"></select>
+        </label>
+        <label class="field">
+          <span>Origem <span class="field-hint">(banca, órgão, ano ou link)</span></span>
+          <input type="text" name="source" maxlength="300" placeholder="Ex.: FGV · TJ-RJ · 2024 · Analista" />
+        </label>
+      </div>
+
+      <div class="field-grid">
+        <label class="field">
+          <span>Área *</span>
+          <input type="text" name="area" maxlength="100" list="areas-list" placeholder="Ex.: Direito" />
+        </label>
+        <label class="field">
+          <span>Disciplina *</span>
+          <input type="text" name="discipline" maxlength="100" list="disciplines-list" placeholder="Ex.: Direito Constitucional" />
+        </label>
+        <label class="field">
+          <span>Assunto *</span>
+          <input type="text" name="subject" maxlength="100" list="subjects-list" placeholder="Ex.: Direitos Fundamentais" />
+        </label>
+        <label class="field">
+          <span>Subassunto</span>
+          <input type="text" name="subsubject" maxlength="100" placeholder="Opcional" />
+        </label>
+      </div>
+      <!-- Sugestões com os nomes que já existem no banco (evita escrever o mesmo assunto de jeitos diferentes) -->
+      <datalist id="areas-list"></datalist>
+      <datalist id="disciplines-list"></datalist>
+      <datalist id="subjects-list"></datalist>
+
+      <label class="field">
+        <span>Explicação <span class="field-hint">(opcional: comentário ou resolução)</span></span>
+        <textarea name="explanation" rows="4" maxlength="10000"></textarea>
+      </label>
+
+      <label class="check">
+        <input type="checkbox" name="is_shared" />
+        <span>Compartilhar com a comunidade <span class="field-hint">(a questão fica visível para os usuários do plano PRO)</span></span>
+      </label>
+
+      <p id="form-error" class="error" role="alert"></p>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" id="save-button">Salvar questão</button>
+        <a class="btn btn-ghost" href="/minhas-questoes.html">Cancelar</a>
+      </div>
+    </form>
+
+    <!-- PASSO 3: salvo -->
+    <section id="saved-section" class="card success-card" hidden>
+      <p class="empty-icon">✅</p>
+      <h2 id="saved-title">Questão salva!</h2>
+      <div class="form-actions">
+        <a class="btn btn-primary" id="solve-link" href="/questoes.html">Resolver agora</a>
+        <a class="btn" href="/adicionar.html">Adicionar outra</a>
+        <a class="btn btn-ghost" href="/minhas-questoes.html">Minhas questões</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/adicionar.js"></script>
+</body>
+</html>

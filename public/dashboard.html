@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Início · Gabarito</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body data-page="dashboard">
+  <!-- O cabeçalho é desenhado pelo common.js (igual em todas as páginas) -->
+  <header class="topbar" id="topbar"></header>
+
+  <main class="container">
+    <div class="page-header">
+      <div>
+        <h1 id="greeting">Olá!</h1>
+        <p class="muted">Um resumo do seu estudo até aqui.</p>
+      </div>
+      <a class="btn btn-primary" href="/questoes.html">Resolver questões</a>
+    </div>
+
+    <div id="pro-banner"></div>
+    <div id="stats"><p class="muted">Carregando...</p></div>
+
+    <h2 class="section-title">Atalhos</h2>
+    <div class="shortcuts">
+      <a class="card shortcut" href="/questoes.html">
+        <span class="shortcut-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M5 4h14v16H5zM9 8h6M9 12h6M9 16h3"/></svg></span>
+        <strong>Banco de questões</strong>
+        <span class="muted small">Filtre, pesquise e resolva</span>
+      </a>
+      <a class="card shortcut" href="/adicionar.html">
+        <span class="shortcut-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M4 16l4-4 4 4M14 14l2-2 4 4M4 4h16v16H4zM15 8h.01"/></svg></span>
+        <strong>Adicionar questão</strong>
+        <span class="muted small">Envie o print e a IA preenche</span>
+      </a>
+      <a class="card shortcut" href="/minhas-questoes.html">
+        <span class="shortcut-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+        <strong>Minhas questões</strong>
+        <span class="muted small">Edite e organize o que cadastrou</span>
+      </a>
+      <a class="card shortcut" href="/desempenho.html">
+        <span class="shortcut-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M4 20V11M10 20V5M16 20v-6M21 20H3"/></svg></span>
+        <strong>Desempenho</strong>
+        <span class="muted small">Gráficos e análise com IA</span>
+      </a>
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <h2>Desempenho por disciplina</h2>
+        <div id="disciplines"><p class="muted">Carregando...</p></div>
+        <a class="link" href="/desempenho.html">Ver desempenho completo →</a>
+      </section>
+      <section class="card">
+        <h2>Últimas respostas</h2>
+        <div id="recent"><p class="muted">Carregando...</p></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

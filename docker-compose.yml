@@ -1,0 +1,17 @@
+# Banco PostgreSQL local para desenvolvimento. Para ligar:  docker compose up -d
+# As tabelas são criadas pelo próprio servidor ao ligar (ele roda o db/schema.sql).
+services:
+  db:
+    image: postgres:16
+    container_name: questoes-postgres
+    environment:
+      POSTGRES_USER: questoes
+      POSTGRES_PASSWORD: questoes123
+      POSTGRES_DB: bancoquestoes
+    ports:
+      - "5434:5432"       # porta do meu PC : porta do container (5432 e 5433 já são usadas por outros projetos)
+    volumes:
+      - questoes-data:/var/lib/postgresql/data   # guarda os dados mesmo se o container for recriado
+
+volumes:
+  questoes-data:

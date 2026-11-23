@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perfil · Gabarito</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body data-page="perfil">
+  <header class="topbar" id="topbar"></header>
+
+  <main class="container">
+    <div class="page-header">
+      <div>
+        <h1>Perfil</h1>
+        <p class="muted">Seus dados e seu plano de acesso.</p>
+      </div>
+      <button type="button" class="btn" id="logout-button">Sair da conta</button>
+    </div>
+
+    <div class="stack">
+      <section class="card" id="profile"><p class="muted">Carregando...</p></section>
+
+      <section>
+        <h2 class="section-title">Planos</h2>
+        <p id="plan-message" class="notice" role="status" hidden></p>
+        <div class="plans" id="plans">
+          <article class="card plan" id="plan-free">
+            <h3>Gratuito</h3>
+            <p class="muted">Para organizar e estudar as suas questões.</p>
+            <ul>
+              <li>Login com Google</li>
+              <li>Cadastro de questões por imagem, com IA</li>
+              <li>Editar e excluir as próprias questões</li>
+              <li>Resolver as próprias questões</li>
+              <li>Dúvidas com IA e acompanhamento de desempenho</li>
+            </ul>
+            <div class="plan-action" id="plan-free-action"></div>
+          </article>
+          <article class="card plan" id="plan-pro">
+            <h3>PRO <span class="badge badge-pro">PRO</span></h3>
+            <p class="muted">Para estudar também com a comunidade.</p>
+            <ul>
+              <li>Tudo do plano gratuito</li>
+              <li>Acesso ao banco de questões compartilhadas por todos os usuários</li>
+              <li>Resolver questões cadastradas por outras pessoas</li>
+            </ul>
+            <div class="plan-action" id="plan-pro-action"></div>
+          </article>
+        </div>
+        <p class="muted small">Nesta versão a assinatura é só <strong>demonstrativa</strong>: nenhum valor é cobrado e nenhum dado bancário é pedido.</p>
+      </section>
+    </div>
+  </main>
+
+  <!-- Janela de confirmação da assinatura (demonstração). <dialog> é um elemento nativo do HTML. -->
+  <dialog id="pro-dialog" class="dialog">
+    <form method="dialog">
+      <span class="badge badge-pro">PRO</span>
+      <h2>Assinar o plano PRO</h2>
+      <p class="notice notice-warn"><strong>Demonstração:</strong> nenhum pagamento é feito e nenhum dado bancário é pedido. Ao confirmar, sua conta passa para o PRO na hora.</p>
+      <p class="muted">Com o PRO você passa a resolver também as questões que outros usuários compartilham com a comunidade.</p>
+      <div class="form-actions dialog-actions">
+        <button type="submit" value="cancel" class="btn btn-ghost">Cancelar</button>
+        <button type="submit" value="confirm" class="btn btn-primary">Confirmar assinatura</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/perfil.js"></script>
+</body>
+</html>
