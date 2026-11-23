@@ -37,8 +37,9 @@ const TOTAL_TIME_MS = 120000;     // depois de 2 minutos tentando, desiste
 
 // Limite de usos por usuário a cada 24 horas. As cotas gratuitas são do PROJETO
 // inteiro (compartilhadas por todos os usuários), então ninguém pode gastá-las sozinho.
-const DAILY_LIMITS = { extracao: 30, duvida: 40, analise: 5 };
-const LIMIT_NAMES = { extracao: 'leituras de imagem', duvida: 'dúvidas', analise: 'análises' };
+// (nesta versão a IA só é usada para ler questões; as dúvidas e a análise com IA foram removidas para poupar a cota)
+const DAILY_LIMITS = { extracao: 30 };
+const LIMIT_NAMES = { extracao: 'leituras de imagem' };
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E'];
 
@@ -334,86 +335,9 @@ async function extractQuestion(imageBase64, mimeType, existingNames) {
   };
 }
 
-// ------------------------------------------------------------
-// 2) Tirar uma dúvida sobre uma questão
-// ------------------------------------------------------------
-const DOUBT_RULES = `Você é um professor experiente em concursos públicos brasileiros. Responda à dúvida do estudante sobre a questão de forma didática, objetiva e em português (no máximo cerca de 250 palavras).
-- Baseie-se no enunciado e nas alternativas fornecidos.
-- Se o gabarito for informado, explique por que ele está correto. Se achar que o gabarito pode estar errado, diga isso com cautela e explique o motivo.
-- Se o gabarito não for informado, raciocine junto com o estudante sem afirmar certezas que você não tem.
-- Cite leis, artigos ou súmulas somente se tiver certeza; nunca invente referências.
-- Formato: texto simples. Pode usar **negrito** e listas com "- ". Não use títulos nem tabelas.`;
-
-// question: { area, discipline, subject, statement, alternatives: [{letter, text}] }
-// correctLetter: gabarito (só é enviado se o estudante já respondeu a questão), ou null
-// selectedLetter: última resposta do estudante, ou null
-// history: dúvidas anteriores [{ user_message, ai_response }]
-async function answerDoubt({ question, correctLetter, selectedLetter, history, message }) {
-  const lines = [
-    'QUESTÃO',
-    `Classificação: ${question.area} > ${question.discipline} > ${question.subject}`,
-    `Enunciado: ${question.statement}`,
-    'Alternativas:',
-    ...question.alternatives.map((alt) => `${alt.letter}) ${alt.text}`),
-    `Gabarito: ${correctLetter || 'não informado'}`,
-    `Última resposta do estudante: ${selectedLetter || 'ainda não respondeu'}`,
-  ];
-  if (history.length > 0) {
-    lines.push('', 'CONVERSA ANTERIOR');
-    for (const item of history) {
-      lines.push(`Estudante: ${item.user_message}`, `Professor: ${item.ai_response}`);
-    }
-  }
-  lines.push('', `NOVA DÚVIDA DO ESTUDANTE: ${message}`);
-
-  return callAI({ systemInstruction: DOUBT_RULES, input: lines.join('\n') });
-}
-
-// ------------------------------------------------------------
-// 3) Analisar o desempenho do usuário
-// ------------------------------------------------------------
-const ANALYSIS_SCHEMA = {
-  type: 'object',
-  properties: {
-    summary: { type: 'string' },
-    strengths: { type: 'array', items: { type: 'string' } },
-    difficulties: { type: 'array', items: { type: 'string' } },
-    attention_subjects: { type: 'array', items: { type: 'string' } },
-    study_tips: { type: 'array', items: { type: 'string' } },
-  },
-  required: ['summary', 'strengths', 'difficulties', 'attention_subjects', 'study_tips'],
-};
-
-const ANALYSIS_RULES = `Você é um orientador de estudos para concursos públicos. Analise SOMENTE os dados de desempenho fornecidos e responda em português, em JSON.
-- summary: 2 ou 3 frases resumindo o desempenho geral.
-- strengths: disciplinas com melhor desempenho (cite o percentual).
-- difficulties: disciplinas com mais dificuldade (cite o percentual).
-- attention_subjects: assuntos que precisam de mais atenção.
-- study_tips: 3 a 5 sugestões de estudo práticas e específicas para esses dados.
-Nunca invente números, disciplinas ou assuntos que não estejam nos dados. "respostas" são tentativas (a mesma questão pode ser respondida mais de uma vez); para falar de questões, use o campo "questoes_diferentes_resolvidas". Escreva em português natural, para o próprio estudante ("você"), e nunca copie os nomes técnicos dos campos no texto (escreva "questões diferentes", e não "questoes_diferentes_resolvidas"). Quando uma disciplina ou assunto tiver menos de 3 respostas, avise que o resultado ainda é pouco confiável. Cada item das listas deve ser uma frase curta.`;
-
-async function analyzePerformance(data) {
-  const text = await callAI({
-    systemInstruction: ANALYSIS_RULES,
-    input: `Dados de desempenho do estudante (gerados a partir do banco de dados):\n${JSON.stringify(data, null, 2)}`,
-    schema: ANALYSIS_SCHEMA,
-  });
-  const raw = parseJson(text);
-  const list = (value) => (Array.isArray(value) ? value.map(asText).filter(Boolean) : []);
-  return {
-    summary: asText(raw.summary),
-    strengths: list(raw.strengths),
-    difficulties: list(raw.difficulties),
-    attention_subjects: list(raw.attention_subjects),
-    study_tips: list(raw.study_tips),
-  };
-}
-
 module.exports = {
   callAI,
   checkDailyLimit,
   saveInteraction,
   extractQuestion,
-  answerDoubt,
-  analyzePerformance,
 };

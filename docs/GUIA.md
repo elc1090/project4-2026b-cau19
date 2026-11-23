@@ -23,10 +23,10 @@ project4-2026b-cau19/
 ├── server.js            ← liga o Express, entrega o public/, junta as rotas e cria as tabelas ao ligar
 ├── database.js          ← conexão com o PostgreSQL (pool do pg)
 ├── auth.js              ← login Google (OAuth), cookie com o JWT, requireAuth, /api/me e /api/me/plan
-├── ai.js                ← tudo que conversa com as IAs (Groq, OpenRouter, Gemini): ler imagem, dúvida, análise
+├── ai.js                ← tudo que conversa com as IAs (Groq, OpenRouter, Gemini): ler as questões das imagens
 ├── routes/
-│   ├── questions.js     ← cadastrar, listar/filtrar, resolver, editar, apagar, dúvidas (regra PRO aqui)
-│   └── stats.js         ← estatísticas e análise de desempenho
+│   ├── questions.js     ← cadastrar, listar/filtrar, resolver, editar, apagar (regra PRO aqui)
+│   └── stats.js         ← estatísticas de desempenho (direto do banco, sem IA)
 ├── db/
 │   ├── schema.sql       ← estrutura das 5 tabelas (o servidor roda este arquivo ao ligar)
 │   ├── reset.sql        ← apaga todas as tabelas (só para recomeçar do zero)
@@ -36,10 +36,10 @@ project4-2026b-cau19/
 ├── public/              ← FRONTEND (tudo que o navegador baixa)
 │   ├── index.html       ← tela de login
 │   ├── dashboard.html   ← início: resumo e atalhos
-│   ├── questoes.html    ← banco de questões: filtros, resolução e "Perguntar à IA"
+│   ├── questoes.html    ← banco de questões: filtros e resolução
 │   ├── adicionar.html   ← upload do print + formulário de revisão (também edita: ?editar=ID)
 │   ├── minhas-questoes.html
-│   ├── desempenho.html  ← estatísticas, gráficos e análise com IA
+│   ├── desempenho.html  ← estatísticas e gráficos
 │   ├── perfil.html      ← dados do usuário e plano (botão "Assinar PRO", demonstrativo)
 │   ├── style.css        ← identidade visual (cores e fontes em variáveis no :root)
 │   ├── favicon.svg
@@ -62,7 +62,7 @@ project4-2026b-cau19/
 users 1 ── N questions        (cada questão tem um autor)
 questions 1 ── N alternatives (de 2 a 5 alternativas, letras A–E)
 users 1 ── N answers N ── 1 questions        (histórico de respostas)
-users 1 ── N ai_interactions N ── 0..1 questions  (dúvidas, leituras de imagem e análises)
+users 1 ── N ai_interactions N ── 0..1 questions  (leituras de imagem; serve para o limite diário)
 ```
 
 - **`questions.correct_letter` vazio (`NULL`):** significa gabarito não informado. A IA **não inventa**
@@ -71,8 +71,8 @@ users 1 ── N ai_interactions N ── 0..1 questions  (dúvidas, leituras de
 - **`questions.is_shared = true`:** a questão fica visível para os usuários PRO.
 - **`users.plan`:** `'free'` ou `'pro'`. É lido do banco a cada pedido.
 - **`answers.is_correct`:** é calculado **pelo servidor**. O navegador só recebe o gabarito depois de responder.
-- **`ai_interactions`:** guarda as conversas com a IA. Serve para mostrar dúvidas anteriores e para limitar
-  o uso diário.
+- **`ai_interactions`:** registra cada leitura de imagem feita pela IA, para limitar o uso diário. (As dúvidas e
+  a análise com IA foram retiradas antes da apresentação para poupar a cota gratuita.)
 - **Imagens:** **não são guardadas**. Elas vão do navegador para o servidor e do servidor para a IA, e só o
   texto extraído é salvo.
 
@@ -156,7 +156,7 @@ Como funciona a troca (lista `ATTEMPTS` em [ai.js](../ai.js)):
 - **Chave recusada:** se um serviço recusar a chave (401/403), os outros modelos desse mesmo serviço são pulados.
 - **Quando desiste:** depois de 2 minutos no total, mostrando uma mensagem amigável.
 - **Limite por usuário:** como as cotas gratuitas valem para o projeto inteiro, o app também limita cada
-  usuário, a cada 24 horas, a 30 leituras de imagem, 40 dúvidas e 5 análises (`DAILY_LIMITS` em [ai.js](../ai.js)).
+  usuário, a cada 24 horas, a 30 leituras de imagem (`DAILY_LIMITS` em [ai.js](../ai.js)).
 - **`GEMINI_MODEL` (opcional):** coloca um modelo do Gemini **antes de todos**. É útil se você ativar o
   faturamento do Gemini.
 
@@ -208,11 +208,11 @@ Com o servidor ligado num terminal, rode em outro:
 npm test
 ```
 
-São 20 testes de acessos **permitidos** e **não permitidos**:
+São 19 testes de acessos **permitidos** e **não permitidos**:
 
 - sem login;
 - crachá falsificado;
-- usuário gratuito tentando ver, responder ou perguntar sobre questões compartilhadas;
+- usuário gratuito tentando ver ou responder questões compartilhadas;
 - usuário PRO tentando ver questões particulares de outros;
 - edição e exclusão só pelo autor;
 - correção feita pelo servidor;
@@ -321,7 +321,7 @@ dois lugares.
 ### 5. Testar online
 
 1. Abra `https://SEU-APP.onrender.com/api/health`. Deve aparecer `{"status":"ok",...}`.
-2. Entre com o Google, cadastre uma questão por imagem, resolva, pergunte à IA, confira o Desempenho e teste
+2. Entre com o Google, cadastre uma questão por imagem, resolva, confira o Desempenho e teste
    o botão **Assinar PRO** no Perfil.
 3. Rode os testes automáticos contra o site publicado (seção [Testes automáticos](#rodar-os-testes-contra-o-site-publicado)).
 4. Coloque a URL no README (seção "Acesso") e na seção "About" do repositório no GitHub.
@@ -344,11 +344,9 @@ dois lugares.
 | `GET /api/questions/filters` | opções dos filtros | regra de acesso¹ |
 | `GET /api/questions/:id` | uma questão, **sem** gabarito | regra de acesso¹ |
 | `POST /api/questions/:id/answer` | corrige, grava no histórico e devolve gabarito e explicação | regra de acesso¹ |
-| `GET` e `POST /api/questions/:id/doubts` | dúvidas com IA | regra de acesso¹ |
 | `PUT` e `DELETE /api/questions/:id` | editar e apagar | só o autor |
 | `GET /api/me/questions` · `GET /api/me/questions/:id` | minhas questões (com gabarito, para editar) | só o autor |
 | `GET /api/stats` | totais, por disciplina, por dia e histórico | logado (só os próprios dados) |
-| `GET` e `POST /api/stats/analysis` | última análise e nova análise com IA | logado (só os próprios dados) |
 
 ¹ **Regra de acesso:** o usuário vê a questão se for o **autor** **ou** se ela for **compartilhada** e ele for
 **PRO**. Ela está na constante `CAN_SEE` em [routes/questions.js](../routes/questions.js) e entra no `WHERE`
@@ -362,8 +360,7 @@ de toda consulta que lê questões. O plano vem do banco (`req.user.plan`), nunc
 - **Login com Google:** usa o parâmetro `state` contra logins injetados.
 - **SQL:** todas as consultas são parametrizadas (`$1`, `$2`...), contra SQL injection.
 - **HTML:** todo texto vindo do servidor passa por `escapeHtml()` antes de ir para a tela, contra XSS. Isso é
-  importante porque questões compartilhadas têm textos de outras pessoas. As respostas da IA também são
-  escapadas antes de virar **negrito**, *itálico* e listas.
+  importante porque questões compartilhadas têm textos de outras pessoas.
 - **Erros:** "não existe" e "sem permissão" devolvem a mesma resposta (404), para ninguém descobrir questões
   alheias testando números.
 

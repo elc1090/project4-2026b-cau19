@@ -1,15 +1,13 @@
 // ============================================================
-// ROTAS DE DESEMPENHO: estatísticas e análise com IA
+// ROTAS DE DESEMPENHO: estatísticas (calculadas direto do banco, sem IA)
 // ============================================================
 // Tudo aqui usa só as respostas do PRÓPRIO usuário (WHERE user_id = req.user.id).
 
 const express = require('express');
 const pool = require('../database');
 const { requireAuth } = require('../auth');
-const ai = require('../ai');
 
 const router = express.Router();
-const MIN_ANSWERS_FOR_ANALYSIS = 5;
 
 function percent(correct, total) {
   return total > 0 ? Math.round((correct * 100) / total) : null;
@@ -81,72 +79,6 @@ router.get('/', requireAuth, async (req, res) => {
     by_day: await getByDay(userId),
     history: history.rows,
   });
-});
-
-// ------------------------------------------------------------
-// Análise de desempenho com IA
-// ------------------------------------------------------------
-
-// Última análise gerada (para não precisar gerar de novo a cada visita)
-router.get('/analysis', requireAuth, async (req, res) => {
-  const result = await pool.query(
-    `SELECT ai_response, created_at FROM ai_interactions
-     WHERE user_id = $1 AND kind = 'analise'
-     ORDER BY created_at DESC LIMIT 1`,
-    [req.user.id]
-  );
-  const row = result.rows[0];
-  res.json(row ? { analysis: JSON.parse(row.ai_response), created_at: row.created_at } : { analysis: null });
-});
-
-// Gera uma nova análise a partir dos dados REAIS do banco
-router.post('/analysis', requireAuth, async (req, res) => {
-  const userId = req.user.id;
-  const totals = await getTotals(userId);
-  if (totals.total < MIN_ANSWERS_FOR_ANALYSIS) {
-    return res.status(400).json({
-      error: `Responda pelo menos ${MIN_ANSWERS_FOR_ANALYSIS} questões com gabarito para gerar uma análise (você tem ${totals.total}).`,
-    });
-  }
-
-  await ai.checkDailyLimit(userId, 'analise');
-
-  // Acertos por assunto (mais detalhado que por disciplina)
-  const bySubject = await pool.query(
-    `SELECT q.discipline, q.subject,
-            count(*)::int AS total,
-            count(*) FILTER (WHERE a.is_correct)::int AS correct
-     FROM answers a JOIN questions q ON q.id = a.question_id
-     WHERE a.user_id = $1
-     GROUP BY q.discipline, q.subject
-     ORDER BY total DESC
-     LIMIT 40`,
-    [userId]
-  );
-
-  // Estes são os ÚNICOS dados que a IA recebe. Os nomes são bem explícitos para a IA não
-  // confundir "respostas" (cada tentativa) com "questões diferentes".
-  const numbers = (row) => ({
-    respostas: row.total,
-    acertos: row.correct,
-    percentual_acerto: percent(row.correct, row.total),
-  });
-  const data = {
-    geral: {
-      respostas: totals.total,
-      acertos: totals.correct,
-      erros: totals.wrong,
-      percentual_acerto: totals.percent,
-      questoes_diferentes_resolvidas: totals.questions,
-    },
-    por_disciplina: (await getByDiscipline(userId)).map((row) => ({ area: row.area, disciplina: row.discipline, ...numbers(row) })),
-    por_assunto: bySubject.rows.map((row) => ({ disciplina: row.discipline, assunto: row.subject, ...numbers(row) })),
-    respostas_por_dia_ultimos_30_dias: (await getByDay(userId)).map((row) => ({ dia: row.day, respostas: row.total, acertos: row.correct })),
-  };
-
-  const analysis = await ai.analyzePerformance(data);
-  const createdAt = await ai.saveInteraction(userId, null, 'analise', null, JSON.stringify(analysis));
-  res.status(201).json({ analysis, created_at: createdAt });
 });
 
 module.exports = router;

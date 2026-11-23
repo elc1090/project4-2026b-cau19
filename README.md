@@ -1,6 +1,6 @@
 # Projeto: Gabarito, banco de questões para concursos com autenticação, IA e plano PRO
 
-![GIF do Gabarito: login, cadastro de questão por imagem com IA, resolução, dúvida com IA, acesso negado pelo servidor ao banco compartilhado, assinatura PRO, desempenho com análise da IA e logout](./demo.gif "Demonstração do Gabarito")
+![GIF do Gabarito: login, cadastro de questão por imagem com IA, resolução com correção e explicação, acesso negado pelo servidor ao banco compartilhado, assinatura PRO, banco compartilhado liberado, desempenho e logout](./demo.gif "Demonstração do Gabarito")
 
 ## Acesso
 
@@ -21,8 +21,8 @@ enunciado e as alternativas, identifica o gabarito **quando ele aparece na image
 classifica a questão por área, disciplina, assunto e subassunto. Antes de salvar, o usuário revisa e corrige
 tudo num formulário.
 
-As questões podem ser filtradas, pesquisadas e resolvidas, com correção feita pelo servidor. A IA também tira
-dúvidas sobre cada questão e analisa o desempenho do usuário a partir dos dados reais do banco. Há dois níveis
+As questões podem ser filtradas, pesquisadas e resolvidas, com correção feita pelo servidor. O desempenho do
+usuário é calculado a partir das respostas reais guardadas no banco. Há dois níveis
 de acesso: **gratuito**, com as próprias questões, e **PRO**, que também acessa o banco de questões
 compartilhadas por todos os usuários. O controle de acesso é feito no backend.
 
@@ -38,8 +38,7 @@ PostgreSQL, publicado no Render, reaproveitando a estrutura do Projeto 3.
 | Adicionar questão por imagem (IA) ou manualmente, com revisão antes de salvar | **somente autenticado** |
 | Minhas questões: editar e excluir | **somente autenticado, só as próprias** |
 | Banco de questões: filtros (área, disciplina, assunto), pesquisa e resolução com correção | **autenticado**: as próprias + as compartilhadas, se for PRO |
-| Perguntar à IA sobre uma questão | **autenticado**, só nas questões que ele pode ver |
-| Desempenho: totais, acertos por disciplina, evolução, histórico e análise com IA | **somente autenticado, só os próprios dados** |
+| Desempenho: totais, acertos por disciplina, evolução e histórico | **somente autenticado, só os próprios dados** |
 | Banco compartilhado: resolver questões cadastradas por outras pessoas | **somente PRO** |
 | Assinar PRO ou voltar ao gratuito (demonstração, sem cobrança) | **somente autenticado** |
 
@@ -120,7 +119,7 @@ ordem.
 questão de porcentagem sem gabarito no print, uma conta fácil, e a IA deixou o campo como "não informado". Na
 análise de desempenho apareceu outro problema: a IA escreveu "19 questões resolvidas" quando eram 19 respostas em
 5 questões. Os dados enviados a ela passaram a ter nomes explícitos (`respostas`, `questoes_diferentes_resolvidas`),
-com a regra de escrever em português natural.
+com a regra de escrever em português natural. (Essa análise depois foi retirada; veja "Na véspera da apresentação".)
 
 **Autorização visível e plano PRO.** Na comparação com os requisitos do Projeto 3 apareceu uma lacuna. Naquele
 projeto, a professora tinha comentado que não basta esconder seções na tela, e por isso as abas mostravam o
@@ -130,13 +129,22 @@ virou um botão "Assinar PRO" demonstrativo, com o aviso de que nenhum pagamento
 servidor, que lê o plano do banco a cada pedido.
 
 **Verificação e deploy.** Como a maior parte do código foi escrita pela IA, verificar era o mais importante:
-- 20 testes automáticos de acessos permitidos e não permitidos;
+- 19 testes automáticos de acessos permitidos e não permitidos;
 - testes num navegador automatizado, com capturas de tela no computador e no celular;
 - testes com a IA de verdade, lendo imagens de questões.
 
 O deploy no Render foi manual, sem blueprints. As tabelas são criadas pelo próprio servidor ao ligar, então não
 precisei do `psql`, que no Projeto 3 estragava os acentos no PowerShell. Para o banco não começar vazio, colocamos
 20 questões de exemplo inéditas, sem atribuí-las a bancas reais.
+
+**Na véspera da apresentação.** Para garantir que a leitura das questões funcionasse na hora, tomei duas
+decisões:
+- **Retirei o "Perguntar à IA" e a "Análise com IA".** Elas gastavam a mesma cota gratuita (o Groq aceita só
+  8.000 tokens por minuto) e não eram a parte principal do app. Agora a IA é usada só para ler as questões.
+  O desempenho continua, com números, gráficos e histórico calculados direto do banco.
+- **Renovei o visual.** Troquei as fontes por outras mais modernas (Bricolage Grotesque nos títulos,
+  Instrument Sans no texto e JetBrains Mono nos detalhes) e passei a usar uma paleta com violeta, verde-limão
+  de marca-texto e rosa.
 
 **O que eu levo deste projeto.**
 - A diferença entre **autenticação** (quem é você: Google, JWT e `requireAuth`) e **autorização** (o que você
@@ -299,7 +307,8 @@ usuário se nenhum responder.
 ### Linguagens e afins
 
 - JavaScript no frontend e no backend (Node.js, CommonJS)
-- HTML5 e CSS3 puros, sem frameworks; gráficos feitos só com CSS; janela de confirmação com `<dialog>`
+- HTML5 e CSS3 puros, sem frameworks; gráficos feitos só com CSS; janela de confirmação com `<dialog>`;
+  fontes Bricolage Grotesque, Instrument Sans e JetBrains Mono (Google Fonts)
 - Node.js (20+) + **Express 5** (servidor web e API REST; erros de rotas `async` chegam sozinhos ao tratador de erros)
 - **PostgreSQL 16** com a biblioteca `pg` (SQL escrito à mão, sem ORM)
   - chaves estrangeiras com `on delete cascade`, `unique`, `check` e índices
@@ -308,11 +317,11 @@ usuário se nenhum responder.
   - o servidor roda o `db/schema.sql` ao ligar (`create table if not exists`), então as tabelas nascem sozinhas no Render
 - **Google OAuth 2.0** (fluxo *authorization code*), escrito com o `fetch` do Node, sem biblioteca de login
 - `jsonwebtoken` (crachá JWT) + `cookie-parser` (ler o cookie) + `dotenv` (variáveis de ambiente)
-- **IAs gratuitas com troca automática**, todas com `fetch` puro: **Groq** e **OpenRouter** (formato do OpenAI, modo JSON) e **Google Gemini** (Interactions API, saída estruturada). Usadas para ler imagens, tirar dúvidas e analisar o desempenho
+- **IAs gratuitas com troca automática**, todas com `fetch` puro: **Groq** e **OpenRouter** (formato do OpenAI, modo JSON) e **Google Gemini** (Interactions API, saída estruturada). Usadas para ler as questões a partir das imagens
 - Canvas do navegador para reduzir a imagem antes do envio (fotos de celular podem passar de 10 MB); a imagem **não é guardada**, só o texto extraído
 - Docker + Docker Compose (PostgreSQL local para desenvolvimento)
 - Render: Web Service (Node) + PostgreSQL, configurados manualmente pelo painel (sem blueprints)
-- `node:test` (20 testes automáticos da API, sem dependências extras)
+- `node:test` (19 testes automáticos da API, sem dependências extras)
 
 ### Autenticação e autorização
 
@@ -331,12 +340,12 @@ usuário se nenhum responder.
   - a regra `CAN_SEE` (autor **ou** compartilhada + PRO) entra no SQL de toda leitura de questões;
   - editar e apagar só pelo autor (`AND author_id = ...`; questão de outro → 404);
   - banco compartilhado para gratuitos → 403; o gabarito só depois de responder; a correção é feita no servidor;
-  - estatísticas e análise usam só `WHERE user_id = req.user.id`;
+  - as estatísticas usam só `WHERE user_id = req.user.id`;
   - a **assinatura PRO é demonstrativa**: `PUT /api/me/plan` muda o plano do próprio usuário logado, sem
     pagamento. Numa versão real, essa rota daria lugar à confirmação de um serviço de pagamento.
-- **Testes de acesso:** [tests/api.test.js](./tests/api.test.js) tem **20 testes** de acessos permitidos e
-  **não permitidos**: sem login, crachá falsificado, usuário gratuito tentando ver, responder ou perguntar
-  sobre questão compartilhada, PRO tentando ver questão particular de outro, edição e exclusão por quem não
+- **Testes de acesso:** [tests/api.test.js](./tests/api.test.js) tem **19 testes** de acessos permitidos e
+  **não permitidos**: sem login, crachá falsificado, usuário gratuito tentando ver ou responder questão
+  compartilhada, PRO tentando ver questão particular de outro, edição e exclusão por quem não
   é autor, correção pelo servidor, troca de plano e estatísticas. Como o login real é pelo Google, os testes
   criam usuários temporários no banco e assinam o crachá com o mesmo `JWT_SECRET` (e apagam tudo no final).
   - local (servidor ligado): `npm test`
@@ -348,9 +357,9 @@ usuário se nenhum responder.
 | `GET /api/me`, `PUT /api/me/plan` | autenticado |
 | `POST /api/questions/extract`, `POST /api/questions` | autenticado |
 | `GET /api/questions`, `GET /api/questions/filters`, `GET /api/questions/:id` | autenticado + regra `CAN_SEE` (`?scope=shared` só PRO → 403) |
-| `POST /api/questions/:id/answer`, `GET`/`POST /api/questions/:id/doubts` | autenticado + regra `CAN_SEE` |
+| `POST /api/questions/:id/answer` | autenticado + regra `CAN_SEE` |
 | `PUT /api/questions/:id`, `DELETE /api/questions/:id`, `GET /api/me/questions(/:id)` | autenticado + autor |
-| `GET /api/stats`, `GET`/`POST /api/stats/analysis` | autenticado (só os próprios dados) |
+| `GET /api/stats` | autenticado (só os próprios dados) |
 
 ### Como rodar localmente
 
@@ -394,7 +403,7 @@ banco de dados e problemas comuns) está em **[docs/GUIA.md](./docs/GUIA.md)**.
 - [Render Docs](https://render.com/docs): Web Services, PostgreSQL e variáveis de ambiente
 - [Docker Hub: imagem oficial do Postgres](https://hub.docker.com/_/postgres)
 - [Node.js: test runner (`node:test`)](https://nodejs.org/api/test.html)
-- [Google Fonts](https://fonts.google.com/): Inter e Source Serif 4
+- [Google Fonts](https://fonts.google.com/): Bricolage Grotesque, Instrument Sans e JetBrains Mono
 - [Projeto 3 (Dino Game)](https://github.com/elc1090/project3-2026b-cau19): base para a estrutura do servidor, do banco, dos testes e do deploy
 - GIF gravado com Chrome headless + `gif-encoder-2` e `pngjs` (usados só numa pasta temporária, fora do projeto)
 - Claude Code (Anthropic): assistente de IA, conforme descrito em "Ambiente de desenvolvimento"

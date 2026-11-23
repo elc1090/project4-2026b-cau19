@@ -1,10 +1,6 @@
 // ============================================================
-// DESEMPENHO: números, gráficos (feitos só com CSS) e análise com IA
+// DESEMPENHO: números e gráficos (feitos só com CSS), calculados direto do banco
 // ============================================================
-
-const analysisBox = document.getElementById('analysis');
-const analysisButton = document.getElementById('analysis-button');
-const analysisError = document.getElementById('analysis-error');
 
 // "2026-11-22" no horário local (o servidor agrupa os dias no horário de Brasília)
 function dayKey(date) {
@@ -73,50 +69,6 @@ function historyTableHtml(rows) {
     </div>`;
 }
 
-// ------------------------------------------------------------
-// Análise com IA
-// ------------------------------------------------------------
-function renderAnalysis(data) {
-  if (!data.analysis) {
-    analysisBox.innerHTML = '<p class="muted">Você ainda não gerou uma análise. Responda pelo menos 5 questões com gabarito e clique em "Gerar análise".</p>';
-    return;
-  }
-  const a = data.analysis;
-  const block = (title, items, className) => (items.length === 0 ? '' : `
-    <div class="analysis-block ${className}">
-      <h3>${title}</h3>
-      <ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>
-    </div>`);
-
-  analysisBox.innerHTML = `
-    <p class="analysis-summary">${escapeHtml(a.summary)}</p>
-    <div class="analysis-grid">
-      ${block('Pontos fortes', a.strengths, 'good')}
-      ${block('Dificuldades', a.difficulties, 'low')}
-      ${block('Assuntos que precisam de atenção', a.attention_subjects, 'mid')}
-      ${block('Sugestões de estudo', a.study_tips, 'tips')}
-    </div>
-    <p class="muted small">Gerada em ${formatDateTime(data.created_at)} a partir das suas respostas registradas. A IA pode errar: use como orientação.</p>`;
-  analysisButton.textContent = 'Gerar nova análise';
-}
-
-analysisButton.addEventListener('click', async () => {
-  analysisButton.disabled = true;
-  analysisError.hidden = true;
-  const previousText = analysisButton.textContent;
-  analysisButton.innerHTML = '<span class="spinner"></span> Analisando (até 1 min)...';
-  try {
-    const data = await api('/api/stats/analysis', { method: 'POST' });
-    renderAnalysis(data);
-  } catch (error) {
-    analysisError.textContent = error.message;
-    analysisError.hidden = false;
-    analysisButton.textContent = previousText;
-  } finally {
-    analysisButton.disabled = false;
-  }
-});
-
 async function init() {
   await initPage();
   const stats = await api('/api/stats');
@@ -124,8 +76,6 @@ async function init() {
   document.getElementById('disciplines').innerHTML = disciplineBarsHtml(stats.by_discipline);
   document.getElementById('evolution').innerHTML = evolutionHtml(stats.by_day);
   document.getElementById('history').innerHTML = historyTableHtml(stats.history);
-
-  renderAnalysis(await api('/api/stats/analysis'));
 }
 
 init().catch(showPageError);

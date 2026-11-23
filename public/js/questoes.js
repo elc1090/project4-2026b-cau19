@@ -1,5 +1,5 @@
 // ============================================================
-// BANCO DE QUESTÕES: lista com filtros + tela de resolução + dúvidas com IA
+// BANCO DE QUESTÕES: lista com filtros + tela de resolução
 // ============================================================
 // A mesma página tem duas "telas": a lista (#list-view) e a resolução (#solve-view).
 // Quando uma questão é aberta, a URL vira questoes.html?id=123 (dá para voltar e compartilhar o link).
@@ -10,9 +10,6 @@ const filtersForm = document.getElementById('filters');
 const questionList = document.getElementById('question-list');
 const listInfo = document.getElementById('list-info');
 const questionCard = document.getElementById('question-card');
-const doubtPanel = document.getElementById('doubt-panel');
-const chat = document.getElementById('chat');
-const doubtForm = document.getElementById('doubt-form');
 
 let filterOptions = [];      // combinações {area, discipline, subject} vindas do servidor
 let scope = 'all';           // 'all' | 'mine' | 'shared'
@@ -152,8 +149,6 @@ questionList.addEventListener('click', (event) => {
 async function openQuestion(id, updateUrl = true) {
   listView.hidden = true;
   solveView.hidden = false;
-  doubtPanel.hidden = true;
-  chat.innerHTML = '';
   questionCard.innerHTML = '<p class="muted">Carregando...</p>';
   window.scrollTo(0, 0);
   if (updateUrl) history.pushState({}, '', `/questoes.html?id=${id}`);
@@ -168,7 +163,6 @@ async function openQuestion(id, updateUrl = true) {
   }
   renderQuestion();
   updatePosition();
-  loadDoubts();
 }
 
 function renderQuestion() {
@@ -193,7 +187,6 @@ function renderQuestion() {
     <div id="answer-result"></div>
     <div class="q-actions">
       <button type="button" class="btn btn-primary" id="confirm-button" disabled>Responder</button>
-      <button type="button" class="btn" id="ask-ai-button">Perguntar à IA</button>
     </div>`;
 }
 
@@ -215,11 +208,6 @@ questionCard.addEventListener('click', (event) => {
     const explanation = document.getElementById('explanation');
     explanation.hidden = !explanation.hidden;
     target.textContent = explanation.hidden ? 'Ver explicação' : 'Esconder explicação';
-  }
-  if (target.id === 'ask-ai-button') {
-    doubtPanel.hidden = false;
-    doubtPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    doubtForm.elements.message.focus({ preventScroll: true });
   }
 });
 
@@ -266,7 +254,7 @@ function showAnswerResult(result, button) {
         <div class="explanation" id="explanation" hidden>${escapeHtml(result.explanation)}</div>
       </div>`;
   } else {
-    html += '<p class="muted small">Esta questão não tem explicação cadastrada. Use "Perguntar à IA" para entender melhor.</p>';
+    html += '<p class="muted small">Esta questão não tem explicação cadastrada.</p>';
   }
   document.getElementById('answer-result').innerHTML = html;
 
@@ -305,67 +293,6 @@ window.addEventListener('popstate', () => {
   const id = Number(new URLSearchParams(window.location.search).get('id'));
   if (id) openQuestion(id, false);
   else showList(false);
-});
-
-// ============================================================
-// DÚVIDAS COM IA
-// ============================================================
-function appendMessage(role, html) {
-  const div = document.createElement('div');
-  div.className = `msg msg-${role}`;
-  div.innerHTML = html;
-  chat.appendChild(div);
-  return div;
-}
-
-// Mostra as dúvidas que o usuário já fez sobre esta questão
-async function loadDoubts() {
-  const questionId = currentQuestion.id;
-  try {
-    const doubts = await api(`/api/questions/${questionId}/doubts`);
-    if (currentQuestion?.id !== questionId) return; // o usuário já mudou de questão
-    for (const doubt of doubts) {
-      appendMessage('user', escapeHtml(doubt.user_message));
-      appendMessage('ai', formatAiText(doubt.ai_response));
-    }
-    if (doubts.length > 0) doubtPanel.hidden = false;
-  } catch (error) {
-    // sem histórico de dúvidas: não atrapalha a resolução
-  }
-}
-
-doubtForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const message = doubtForm.elements.message.value.trim();
-  if (!message || !currentQuestion) return;
-
-  const submitButton = doubtForm.querySelector('button');
-  submitButton.disabled = true;
-  appendMessage('user', escapeHtml(message));
-  const reply = appendMessage('ai', '<span class="muted"><span class="spinner"></span> A IA está pensando... (pode levar até 1 minuto)</span>');
-  doubtForm.reset();
-
-  try {
-    const result = await api(`/api/questions/${currentQuestion.id}/doubts`, {
-      method: 'POST',
-      body: { message },
-    });
-    reply.innerHTML = formatAiText(result.ai_response);
-  } catch (error) {
-    reply.classList.add('msg-error');
-    reply.textContent = error.message;
-  } finally {
-    submitButton.disabled = false;
-    reply.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-});
-
-// Enter envia; Shift+Enter quebra a linha
-doubtForm.elements.message.addEventListener('keydown', (event) => {
-  if (event.key === 'Enter' && !event.shiftKey) {
-    event.preventDefault();
-    doubtForm.requestSubmit();
-  }
 });
 
 // ============================================================

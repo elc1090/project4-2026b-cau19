@@ -130,9 +130,8 @@ test('PRO: Bob (free) NÃO vê as questões da Alice, nem as compartilhadas', as
   assert.ok(!lista.body.some((q) => q.id === ids.shared || q.id === ids.private));
 });
 
-test('PRO: Bob (free) não consegue responder nem perguntar à IA sobre a compartilhada', async () => {
+test('PRO: Bob (free) não consegue responder a compartilhada', async () => {
   assert.strictEqual((await api(`/api/questions/${ids.shared}/answer`, { method: 'POST', user: users.bob, body: { letter: 'B' } })).status, 404);
-  assert.strictEqual((await api(`/api/questions/${ids.shared}/doubts`, { user: users.bob })).status, 404);
 });
 
 test('PRO: Carol (pro) vê a compartilhada, mas NÃO a particular', async () => {
@@ -185,11 +184,6 @@ test('desempenho: estatísticas da Carol refletem as respostas reais', async () 
   assert.strictEqual(res.body.totals.wrong, 1);
   assert.strictEqual(res.body.totals.percent, 50);
   assert.strictEqual(res.body.by_discipline[0].discipline, 'Matemática Básica');
-});
-
-test('análise com IA: exige um mínimo de respostas (400)', async () => {
-  const res = await api('/api/stats/analysis', { method: 'POST', user: users.carol });
-  assert.strictEqual(res.status, 400);
 });
 
 test('IA: imagem inválida é recusada antes de chamar a IA (400)', async () => {

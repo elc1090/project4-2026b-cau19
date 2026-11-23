@@ -42,7 +42,7 @@ app.get('/api/health', (req, res) => {
 
 app.use(auth.router);                 // /auth/google, /auth/google/callback, /auth/logout, /api/me
 app.use('/api', questionRoutes);      // /api/questions/..., /api/me/questions/...
-app.use('/api/stats', statsRoutes);   // /api/stats, /api/stats/analysis
+app.use('/api/stats', statsRoutes);   // /api/stats
 
 // Qualquer /api/... que não existe responde 404 em JSON, e não com uma página HTML de erro.
 // Fica DEPOIS de todas as rotas da API: o Express testa as rotas na ordem em que foram escritas.

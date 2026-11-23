@@ -4,7 +4,7 @@
 // Lembrete de segurança: esconder botões aqui é só conforto visual.
 // Quem decide o que cada usuário pode ver ou fazer é SEMPRE o servidor.
 
-const LOGO_SVG = `<svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="currentColor"/><path d="M9.5 16.5l4.3 4.3 8.7-9.3" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const LOGO_SVG = `<svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="currentColor"/><path d="M9.5 16.5l4.3 4.3 8.7-9.3" fill="none" stroke="#d6ff3d" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 let currentUser = null; // dados do usuário logado (vem de GET /api/me)
 
@@ -148,7 +148,7 @@ function statTilesHtml(totals) {
       <div class="stat"><span class="stat-label">Questões resolvidas</span><span class="stat-value">${totals.questions}</span><span class="stat-hint">${totals.total} ${totals.total === 1 ? 'resposta' : 'respostas'} no total</span></div>
       <div class="stat stat-ok"><span class="stat-label">Acertos</span><span class="stat-value">${totals.correct}</span></div>
       <div class="stat stat-wrong"><span class="stat-label">Erros</span><span class="stat-value">${totals.wrong}</span></div>
-      <div class="stat"><span class="stat-label">Aproveitamento</span><span class="stat-value">${percentText}</span>${percentBar}</div>
+      <div class="stat stat-hero"><span class="stat-label">Aproveitamento</span><span class="stat-value">${percentText}</span>${percentBar}</div>
     </div>`;
 }
 
@@ -179,28 +179,3 @@ function historyListHtml(rows) {
     </li>`).join('')}</ul>`;
 }
 
-// Formata o texto da IA com segurança: primeiro escapa o HTML, depois converte
-// **negrito**, *itálico* e linhas começando com "- " em lista. Todo o resto vira parágrafo.
-function formatAiText(text) {
-  const lines = escapeHtml(text)
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // *itálico*: o asterisco precisa estar colado na palavra (assim "* item" de lista não vira itálico)
-    .replace(/(^|[^*\w])\*(\S(?:[^*\n]*?\S)?)\*(?![*\w])/g, '$1<em>$2</em>')
-    .split('\n');
-  let html = '';
-  let inList = false;
-  for (const line of lines) {
-    const item = line.match(/^\s*[-*•]\s+(.*)$/);
-    if (item) {
-      if (!inList) html += '<ul>';
-      inList = true;
-      html += `<li>${item[1]}</li>`;
-      continue;
-    }
-    if (inList) html += '</ul>';
-    inList = false;
-    if (line.trim()) html += `<p>${line}</p>`;
-  }
-  if (inList) html += '</ul>';
-  return html;
-}
