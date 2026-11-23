@@ -138,8 +138,8 @@ próximo. Todos são gratuitos, e nenhum pede cartão.
 
 | Serviço | Onde criar a chave | Variável | Plano grátis | Modelo usado (lê imagens) |
 |---|---|---|---|---|
-| **Groq** | https://console.groq.com/keys → **Create API Key** (começa com `gsk_`) | `GROQ_API_KEY` | 30 pedidos/min, 1.000/dia | `qwen/qwen3.8-27b` |
-| **OpenRouter** | https://openrouter.ai/settings/keys → **Create Key** (começa com `sk-or-`) | `OPENROUTER_API_KEY` | 20 pedidos/min, 50/dia | `google/gemma-4-31b-it:free` e `nvidia/nemotron-3.5-super-vl:free` |
+| **Groq** | https://console.groq.com/keys → **Create API Key** (começa com `gsk_`) | `GROQ_API_KEY` | 30 pedidos/min, 1.000/dia, **8.000 tokens/min** | `qwen/qwen3.8-27b`: o melhor nos testes (2–3 s por imagem) |
+| **OpenRouter** | https://openrouter.ai/settings/keys → **Create Key** (começa com `sk-or-`) | `OPENROUTER_API_KEY` | 20 pedidos/min, 50/dia | `google/gemma-4-31b-it:free` e `nvidia/nemotron-3.5-super-vl:free`: bom em texto, mais fraco para ler imagens (reserva) |
 | **Gemini** | https://aistudio.google.com/apikey → **Criar chave de API** | `GEMINI_API_KEY` | varia; fica sobrecarregado no pico | 5 modelos (`gemini-3.8-flash`, `gemini-3.5-flash-lite`...) |
 
 1. Crie as chaves (dá para entrar com a conta Google ou GitHub em todos).
@@ -151,6 +151,8 @@ Como funciona a troca (lista `ATTEMPTS` em [ai.js](../ai.js)):
 
 - **Quando pula para o próximo:** se um modelo responder "sobrecarregado" (503), "sem cota" (429) ou
   demorar mais de 60 s.
+- **Limite por minuto:** se o serviço pedir para esperar até 20 s (comum no Groq, que aceita 8.000 tokens por
+  minuto, e cada imagem gasta boa parte disso), o app espera e tenta de novo no mesmo modelo.
 - **Chave recusada:** se um serviço recusar a chave (401/403), os outros modelos desse mesmo serviço são pulados.
 - **Quando desiste:** depois de 2 minutos no total, mostrando uma mensagem amigável.
 - **Limite por usuário:** como as cotas gratuitas valem para o projeto inteiro, o app também limita cada

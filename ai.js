@@ -69,15 +69,28 @@ async function callAI({ systemInstruction, input, schema }) {
   const rejectedKeys = new Set(); // serviços que recusaram a chave: não adianta tentar outros modelos deles
   const problems = [];
 
+  // Faz uma tentativa no serviço certo, respeitando o tempo que ainda resta
+  const send = (provider, model) => {
+    const timeout = Math.max(1000, Math.min(ATTEMPT_TIMEOUT_MS, giveUpAt - Date.now()));
+    return provider === 'gemini'
+      ? sendToGemini(model, systemInstruction, input, schema, timeout)
+      : sendToOpenAICompatible(provider, model, systemInstruction, input, schema, timeout);
+  };
+
   for (const { provider, model } of attempts) {
     if (rejectedKeys.has(provider)) continue;
-    const timeLeft = giveUpAt - Date.now();
-    if (timeLeft <= 0) break; // já tentou por 2 minutos
+    if (giveUpAt - Date.now() <= 0) break; // já tentou por 2 minutos
 
-    const timeout = Math.min(ATTEMPT_TIMEOUT_MS, timeLeft);
-    const result = provider === 'gemini'
-      ? await sendToGemini(model, systemInstruction, input, schema, timeout)
-      : await sendToOpenAICompatible(provider, model, systemInstruction, input, schema, timeout);
+    let result = await send(provider, model);
+
+    // "Limite por minuto": o serviço avisa quantos segundos esperar (o Groq costuma pedir de 5 a 10 s).
+    // Se for pouco, vale esperar e tentar mais UMA vez no mesmo modelo, em vez de ir para um reserva pior.
+    const wait = result.retryAfter;
+    if (!result.ok && result.problem === 429 && wait > 0 && wait <= 20 && Date.now() + wait * 1000 < giveUpAt) {
+      console.log(`IA ${provider} (${model}) pediu ${wait} s de espera; tentando de novo...`);
+      await new Promise((resolve) => setTimeout(resolve, wait * 1000 + 500));
+      result = await send(provider, model);
+    }
 
     if (result.ok && result.text) {
       console.log(`IA respondeu: ${provider} (${model})`);
@@ -177,7 +190,13 @@ async function sendToOpenAICompatible(provider, model, systemInstruction, input,
       signal: AbortSignal.timeout(timeoutMs),
     });
     const data = await response.json().catch(() => null);
-    if (!response.ok) return { ok: false, problem: response.status, detail: JSON.stringify(data) };
+    if (!response.ok) {
+      const detail = JSON.stringify(data);
+      // Quantos segundos esperar: vem no cabeçalho "retry-after" ou na mensagem ("try again in 5.02s")
+      const fromMessage = /try again in ([\d.]+)\s*s/i.exec(detail || '');
+      const retryAfter = Math.ceil(Number(response.headers.get('retry-after')) || Number(fromMessage?.[1]) || 0);
+      return { ok: false, problem: response.status, detail, retryAfter };
+    }
 
     // Alguns modelos "pensam em voz alta" entre <think> e </think>: tiramos essa parte
     const text = String(data?.choices?.[0]?.message?.content || '')
