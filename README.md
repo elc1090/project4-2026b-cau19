@@ -4,7 +4,7 @@
 
 ## Acesso
 
-**⚠️ A PREENCHER: https://SEU-APP.onrender.com** (URL do Render, depois do deploy; adicionar também na seção "About" do repositório no GitHub)
+**https://gabarito-wuap.onrender.com**
 
 > O plano gratuito do Render "dorme" após 15 minutos sem acesso: o primeiro carregamento pode levar
 > cerca de 1 minuto.
