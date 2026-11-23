@@ -81,7 +81,8 @@ async function start() {
     if (error) throw error; // ex.: porta ocupada (EADDRINUSE): outro servidor já está usando a porta
     console.log(`Servidor rodando em http://localhost:${PORT}`);
     if (!process.env.GOOGLE_CLIENT_ID) console.log('Aviso: login Google ainda não configurado (veja o README).');
-    if (!process.env.GEMINI_API_KEY) console.log('Aviso: IA ainda não configurada (veja o README).');
+    const aiKeys = ['GROQ_API_KEY', 'OPENROUTER_API_KEY', 'GEMINI_API_KEY'].filter((name) => process.env[name]);
+    console.log(aiKeys.length ? `IAs configuradas: ${aiKeys.join(', ')}` : 'Aviso: IA ainda não configurada (veja o README).');
   });
 }
 

@@ -7,7 +7,7 @@ A apresentação do projeto está no [README](../README.md).
 - [Banco de dados](#banco-de-dados)
 - [Como rodar no seu computador](#como-rodar-no-seu-computador)
 - [Configurar o login com Google](#configurar-o-login-com-google)
-- [Configurar a IA (Gemini, gratuito)](#configurar-a-ia-gemini-gratuito)
+- [Configurar as IAs (gratuitas)](#configurar-as-ias-gratuitas)
 - [Assinar o plano PRO (demonstração)](#assinar-o-plano-pro-demonstração)
 - [Testes automáticos](#testes-automáticos)
 - [Publicar no Render](#publicar-no-render)
@@ -23,7 +23,7 @@ project4-2026b-cau19/
 ├── server.js            ← liga o Express, entrega o public/, junta as rotas e cria as tabelas ao ligar
 ├── database.js          ← conexão com o PostgreSQL (pool do pg)
 ├── auth.js              ← login Google (OAuth), cookie com o JWT, requireAuth, /api/me e /api/me/plan
-├── ai.js                ← tudo que conversa com o Gemini: ler imagem, tirar dúvida, analisar desempenho
+├── ai.js                ← tudo que conversa com as IAs (Groq, OpenRouter, Gemini): ler imagem, dúvida, análise
 ├── routes/
 │   ├── questions.js     ← cadastrar, listar/filtrar, resolver, editar, apagar, dúvidas (regra PRO aqui)
 │   └── stats.js         ← estatísticas e análise de desempenho
@@ -103,7 +103,7 @@ Banco de dados conectado e tabelas conferidas.
 Servidor rodando em http://localhost:3002
 ```
 
-Enquanto o Google e o Gemini não estiverem configurados, aparecem dois avisos no terminal, e o botão
+Enquanto o Google e as IAs não estiverem configurados, aparecem dois avisos no terminal, e o botão
 "Entrar com Google" mostra uma mensagem explicando o que falta.
 
 ## Configurar o login com Google
@@ -130,26 +130,44 @@ Enquanto o Google e o Gemini não estiverem configurados, aparecem dois avisos n
 > `/auth/google/callback`. Confira `http`/`https`, a porta e a barra no final. Mudanças no Google podem levar
 > alguns minutos para valer.
 
-## Configurar a IA (Gemini, gratuito)
+## Configurar as IAs (gratuitas)
 
-1. Acesse https://aistudio.google.com/apikey e clique em **Criar chave de API**. Não é preciso cartão.
-2. Cole a chave no `.env`: `GEMINI_API_KEY=...`
-3. Teste com `npm run test:ia`. Deve aparecer `OK: a IA está funcionando.` Se der erro, o motivo aparece no terminal.
+O app usa **três serviços de IA gratuitos**, nesta ordem: **Groq → OpenRouter → Gemini**. Configure pelo
+menos um. Com mais de um, quando o primeiro estiver sobrecarregado ou sem cota, o app passa sozinho para o
+próximo. Todos são gratuitos, e nenhum pede cartão.
 
-Sobre o plano gratuito do Gemini:
+| Serviço | Onde criar a chave | Variável | Plano grátis | Modelo usado (lê imagens) |
+|---|---|---|---|---|
+| **Groq** | https://console.groq.com/keys → **Create API Key** (começa com `gsk_`) | `GROQ_API_KEY` | 30 pedidos/min, 1.000/dia | `qwen/qwen3.8-27b` |
+| **OpenRouter** | https://openrouter.ai/settings/keys → **Create Key** (começa com `sk-or-`) | `OPENROUTER_API_KEY` | 20 pedidos/min, 50/dia | `google/gemma-4-31b-it:free` e `nvidia/nemotron-3.5-super-vl:free` |
+| **Gemini** | https://aistudio.google.com/apikey → **Criar chave de API** | `GEMINI_API_KEY` | varia; fica sobrecarregado no pico | 5 modelos (`gemini-3.8-flash`, `gemini-3.5-flash-lite`...) |
 
-- **Limites:** o plano gratuito tem limites de pedidos por minuto e por dia, que valem para o projeto inteiro.
-  Por isso o app também limita cada usuário, a cada 24 horas, a 30 leituras de imagem, 40 dúvidas e 5
-  análises (`DAILY_LIMITS` em [ai.js](../ai.js)).
-- **Privacidade:** no plano gratuito, o Google pode usar o conteúdo enviado para melhorar os produtos dele.
-  Não envie dados pessoais para a IA.
-- **Modelos:** o app tenta, nesta ordem: `gemini-3.8-flash`, `gemini-3.5-flash-lite`, `gemini-3.6-flash`,
-  `gemini-3.1-flash-lite` e `gemini-4-hydrogen` (lista `MODELS` em [ai.js](../ai.js)).
-  - **Quando pula para o próximo:** se um modelo responder "sobrecarregado" (503), "sem cota" (429) ou
-    demorar mais de 60 s.
-  - **Quando desiste:** depois de 2 minutos no total, mostrando uma mensagem amigável.
-  - **Mudar o primeiro da lista:** defina `GEMINI_MODEL` no `.env`.
-  - **Modelos gratuitos atuais:** https://ai.google.dev/gemini-api/docs/pricing.
+1. Crie as chaves (dá para entrar com a conta Google ou GitHub em todos).
+2. Cole no `.env`, por exemplo `GROQ_API_KEY=gsk_...`, e no Render, em **Environment**, com os mesmos nomes.
+3. Teste com `npm run test:ia`. O terminal mostra qual serviço respondeu (`IA respondeu: groq (...)`) e
+   termina com `OK: a IA está funcionando.`
+
+Como funciona a troca (lista `ATTEMPTS` em [ai.js](../ai.js)):
+
+- **Quando pula para o próximo:** se um modelo responder "sobrecarregado" (503), "sem cota" (429) ou
+  demorar mais de 60 s.
+- **Chave recusada:** se um serviço recusar a chave (401/403), os outros modelos desse mesmo serviço são pulados.
+- **Quando desiste:** depois de 2 minutos no total, mostrando uma mensagem amigável.
+- **Limite por usuário:** como as cotas gratuitas valem para o projeto inteiro, o app também limita cada
+  usuário, a cada 24 horas, a 30 leituras de imagem, 40 dúvidas e 5 análises (`DAILY_LIMITS` em [ai.js](../ai.js)).
+- **`GEMINI_MODEL` (opcional):** coloca um modelo do Gemini **antes de todos**. É útil se você ativar o
+  faturamento do Gemini.
+
+Cuidados:
+
+- **Privacidade:** planos gratuitos podem registrar o que é enviado. O Groq diz que, por padrão, não guarda
+  os pedidos. Nos modelos `:free` do OpenRouter e no Gemini gratuito, o conteúdo pode ser usado pelos
+  provedores. Não envie dados pessoais para a IA.
+- **OpenRouter:** se o teste mostrar um erro sobre *data policy*, abra **Settings → Privacy** e permita os
+  provedores dos modelos gratuitos.
+- **Modelos mudam:** se um modelo deixar de existir, o app simplesmente pula para o próximo. Para atualizar a
+  lista, veja os modelos gratuitos com imagem em https://openrouter.ai/models, https://console.groq.com/docs/vision
+  e https://ai.google.dev/gemini-api/docs/pricing.
 
 ### Se a IA gratuita estiver sempre "sobrecarregada"
 
@@ -285,7 +303,7 @@ O `.gitignore` impede que o `.env` e o `node_modules/` sejam enviados. **Nunca**
 | `APP_URL` | `https://SEU-APP.onrender.com` (o endereço que o Render mostra, sem barra no final) |
 | `GOOGLE_CLIENT_ID` | o mesmo do `.env` |
 | `GOOGLE_CLIENT_SECRET` | o mesmo do `.env` |
-| `GEMINI_API_KEY` | a mesma do `.env` |
+| `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `GEMINI_API_KEY` | as mesmas do `.env` (pelo menos uma) |
 
 Não defina `PORT`: o Render escolhe a porta e o servidor usa a que ele informar.
 
@@ -336,7 +354,7 @@ de toda consulta que lê questões. O plano vem do banco (`req.user.plan`), nunc
 
 ## Segurança
 
-- **Chaves:** as chaves do Google e do Gemini ficam só no servidor, em variáveis de ambiente.
+- **Chaves:** as chaves do Google e das IAs ficam só no servidor, em variáveis de ambiente.
 - **Sessão:** o crachá de login fica num cookie `httpOnly` (o JavaScript da página não consegue ler) e
   `sameSite=lax` (protege contra pedidos forjados por outros sites). Em `https`, o cookie também é `secure`.
 - **Login com Google:** usa o parâmetro `state` contra logins injetados.
@@ -355,9 +373,8 @@ de toda consulta que lê questões. O plano vem do banco (`req.user.plan`), nunc
 | `EADDRINUSE` | Já existe outro servidor na porta 3002 (um `npm start` esquecido em outro terminal) |
 | `redirect_uri_mismatch` no Google | O URI cadastrado no Google é diferente de `APP_URL` + `/auth/google/callback` |
 | "Acesso bloqueado: o app não concluiu a verificação" | O app está em modo Teste no Google e o seu e-mail não está em "Usuários de teste" |
-| "A IA não está configurada" | Falta `GEMINI_API_KEY` no `.env` ou no Render |
-| "A IA está sobrecarregada no momento" | Os modelos gratuitos do Gemini estão com alta demanda. Espere alguns instantes e tente de novo |
-| "A cota gratuita da IA acabou por enquanto" | Limite do plano gratuito do Gemini. Espere e tente de novo |
+| "A IA não está configurada" | Falta pelo menos uma chave de IA (`GROQ_API_KEY`, `OPENROUTER_API_KEY` ou `GEMINI_API_KEY`) no `.env` ou no Render |
+| "As IAs gratuitas estão sobrecarregadas ou sem cota" | Todos os serviços configurados falharam. Configure mais de um (Groq + OpenRouter + Gemini) ou espere alguns minutos |
 
 ## Limitações desta versão
 
@@ -366,5 +383,5 @@ de toda consulta que lê questões. O plano vem do banco (`req.user.plan`), nunc
 - As imagens não são guardadas, então figuras e gráficos de uma questão não aparecem depois, só o texto. Para
   guardá-las, seria preciso um serviço externo de arquivos, como Cloudinary ou Supabase Storage.
 - A lista mostra até 100 questões por vez. Use os filtros para refinar.
-- O plano gratuito do Gemini pode ficar sobrecarregado em horários de pico; o app tenta de novo
-  automaticamente, mas às vezes é preciso esperar.
+- As IAs gratuitas podem ficar sobrecarregadas ou sem cota em horários de pico. Com mais de um serviço
+  configurado (Groq, OpenRouter e Gemini), o app troca sozinho, mas às vezes ainda é preciso esperar.

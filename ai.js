@@ -1,30 +1,42 @@
 // ============================================================
-// IA: todas as conversas com o Gemini (Google) ficam neste arquivo
+// IA: todas as conversas com as IAs ficam neste arquivo
 // ============================================================
-// Usamos a "Interactions API" do Gemini com fetch puro (sem biblioteca).
-// A chave GEMINI_API_KEY fica só aqui no servidor: o navegador nunca a vê.
-// Plano gratuito: tem limite de pedidos por dia, e o Google pode usar o conteúdo
-// enviado para melhorar os produtos dele (não envie dados pessoais para a IA).
+// O app usa SÓ planos gratuitos, de três serviços, com fetch puro (sem biblioteca):
+//   - Groq        (rápido; 1.000 pedidos por dia no plano grátis)
+//   - OpenRouter  (modelos ":free"; 50 pedidos por dia no plano grátis)
+//   - Gemini      (Google; em horário de pico costuma ficar "sobrecarregado")
+// Cada serviço só é usado se a chave dele estiver configurada (.env ou painel do Render).
+// Se um falhar (sobrecarregado, sem cota, lento demais), o app tenta o próximo.
+// As chaves ficam só aqui no servidor: o navegador nunca as vê.
+// Planos gratuitos podem registrar o que é enviado: não envie dados pessoais para a IA.
 
 const pool = require('./database');
 
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
-// Modelos do Gemini, na ordem em que são tentados (todos têm plano gratuito em nov/2026).
-// No plano gratuito o Google atende por último: em horário de pico um modelo pode recusar
-// ("sobrecarregado") ou demorar quase 1 minuto. Por isso o app tenta vários, um depois do outro.
-// A variável GEMINI_MODEL (opcional) coloca outro modelo em 1º lugar.
-const MODELS = [
-  'gemini-3.8-flash',      // o melhor, mas o mais disputado
-  'gemini-3.5-flash-lite', // o que mais respondeu nos testes (e o mais barato se houver faturamento)
-  'gemini-3.6-flash',
-  'gemini-3.1-flash-lite',
-  'gemini-4-hydrogen',
+// Endereço e nome da variável com a chave de cada serviço.
+// Groq e OpenRouter usam o mesmo formato de pedido (o do OpenAI); o Gemini tem formato próprio.
+const PROVIDERS = {
+  groq: { url: 'https://api.groq.com/openai/v1/chat/completions', keyName: 'GROQ_API_KEY' },
+  openrouter: { url: 'https://openrouter.ai/api/v1/chat/completions', keyName: 'OPENROUTER_API_KEY' },
+  gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/interactions', keyName: 'GEMINI_API_KEY' },
+};
+
+// Ordem das tentativas (todos os modelos são gratuitos e leem imagens, em nov/2026).
+// A variável GEMINI_MODEL (opcional, para quem ativar o faturamento do Gemini) coloca esse modelo em 1º.
+const ATTEMPTS = [
+  { provider: 'groq', model: 'qwen/qwen3.8-27b' },
+  { provider: 'openrouter', model: 'google/gemma-4-31b-it:free' },
+  { provider: 'openrouter', model: 'nvidia/nemotron-3.5-super-vl:free' },
+  { provider: 'gemini', model: 'gemini-3.8-flash' },
+  { provider: 'gemini', model: 'gemini-3.5-flash-lite' },
+  { provider: 'gemini', model: 'gemini-3.6-flash' },
+  { provider: 'gemini', model: 'gemini-3.1-flash-lite' },
+  { provider: 'gemini', model: 'gemini-4-hydrogen' },
 ];
-const ATTEMPT_TIMEOUT_MS = 60000; // cada modelo tem até 60 s para responder
+const ATTEMPT_TIMEOUT_MS = 60000; // cada tentativa tem até 60 s para responder
 const TOTAL_TIME_MS = 120000;     // depois de 2 minutos tentando, desiste
 
-// Limite de usos por usuário a cada 24 horas. A cota gratuita do Gemini é do PROJETO
-// inteiro (compartilhada por todos os usuários), então ninguém pode gastá-la sozinho.
+// Limite de usos por usuário a cada 24 horas. As cotas gratuitas são do PROJETO
+// inteiro (compartilhadas por todos os usuários), então ninguém pode gastá-las sozinho.
 const DAILY_LIMITS = { extracao: 30, duvida: 40, analise: 5 };
 const LIMIT_NAMES = { extracao: 'leituras de imagem', duvida: 'dúvidas', analise: 'análises' };
 
@@ -40,55 +52,57 @@ function httpError(status, message) {
 }
 
 // ------------------------------------------------------------
-// Chamada genérica ao Gemini
+// Chamada genérica à IA (tenta os serviços na ordem de ATTEMPTS)
 // ------------------------------------------------------------
 // systemInstruction: regras de comportamento da IA
 // input: texto, ou lista de partes ({ type: 'text', text } e { type: 'image', data, mime_type })
-// schema (opcional): formato JSON obrigatório da resposta ("saída estruturada")
-async function callGemini({ systemInstruction, input, schema }) {
-  if (!process.env.GEMINI_API_KEY) {
-    throw httpError(503, 'A IA não está configurada no servidor (falta a GEMINI_API_KEY). Veja o README.');
+// schema (opcional): formato JSON obrigatório da resposta
+async function callAI({ systemInstruction, input, schema }) {
+  // Só entram as tentativas dos serviços que têm chave configurada
+  const extra = process.env.GEMINI_MODEL ? [{ provider: 'gemini', model: process.env.GEMINI_MODEL }] : [];
+  const attempts = [...extra, ...ATTEMPTS].filter((a) => process.env[PROVIDERS[a.provider].keyName]);
+  if (attempts.length === 0) {
+    throw httpError(503, 'A IA não está configurada no servidor (falta GROQ_API_KEY, OPENROUTER_API_KEY ou GEMINI_API_KEY). Veja o README.');
   }
 
-  // Lista sem repetidos: o GEMINI_MODEL (se existir) primeiro, depois os da lista MODELS
-  const models = [...new Set([process.env.GEMINI_MODEL, ...MODELS].filter(Boolean))];
   const giveUpAt = Date.now() + TOTAL_TIME_MS;
-  let lastProblem = null;
+  const rejectedKeys = new Set(); // serviços que recusaram a chave: não adianta tentar outros modelos deles
+  const problems = [];
 
-  for (const model of models) {
+  for (const { provider, model } of attempts) {
+    if (rejectedKeys.has(provider)) continue;
     const timeLeft = giveUpAt - Date.now();
     if (timeLeft <= 0) break; // já tentou por 2 minutos
 
-    const result = await sendToGemini(model, systemInstruction, input, schema, Math.min(ATTEMPT_TIMEOUT_MS, timeLeft));
-    if (result.ok) {
-      if (model !== models[0]) console.log(`IA respondeu com o modelo reserva ${model}`);
-      return getText(result.data);
+    const timeout = Math.min(ATTEMPT_TIMEOUT_MS, timeLeft);
+    const result = provider === 'gemini'
+      ? await sendToGemini(model, systemInstruction, input, schema, timeout)
+      : await sendToOpenAICompatible(provider, model, systemInstruction, input, schema, timeout);
+
+    if (result.ok && result.text) {
+      console.log(`IA respondeu: ${provider} (${model})`);
+      return result.text;
     }
 
     // O detalhe técnico vai para o terminal do servidor; o usuário recebe uma mensagem simples
-    console.error(`Gemini (${model}) falhou: ${result.problem}`, result.data ? JSON.stringify(result.data) : '');
-    lastProblem = result.problem;
-    // Chave inválida ou sem permissão: trocar de modelo não adianta
-    if (result.problem === 401 || result.problem === 403) break;
+    const problem = result.ok ? 'resposta vazia' : result.problem;
+    console.error(`IA ${provider} (${model}) falhou: ${problem}`, result.detail || '');
+    problems.push(problem);
+    if (problem === 401 || problem === 403) rejectedKeys.add(provider);
   }
 
-  if (lastProblem === 429) {
-    throw httpError(429, 'A cota gratuita da IA acabou por enquanto. Tente novamente mais tarde.');
+  if (problems.length > 0 && problems.every((p) => p === 401 || p === 403)) {
+    throw httpError(502, 'As chaves das IAs foram recusadas. Confira as variáveis de ambiente do servidor.');
   }
-  if (lastProblem === 401 || lastProblem === 403) {
-    throw httpError(502, 'O Google recusou a chave da IA (confira a GEMINI_API_KEY no servidor).');
-  }
-  if (lastProblem === 'sem conexão') {
+  if (problems.length > 0 && problems.every((p) => p === 'sem conexão')) {
     throw httpError(502, 'Não foi possível falar com a IA. Tente de novo.');
   }
-  if (lastProblem === 503 || lastProblem === 500 || lastProblem === 'tempo esgotado') {
-    throw httpError(503, 'A IA gratuita está sobrecarregada agora. Tente de novo em alguns minutos.');
-  }
-  throw httpError(502, 'A IA recusou o pedido. Tente de novo (detalhes no terminal do servidor).');
+  throw httpError(503, 'As IAs gratuitas estão sobrecarregadas ou sem cota agora. Tente de novo em alguns minutos.');
 }
 
-// Faz UM pedido ao Gemini com o modelo indicado.
-// Devolve { ok, data, problem }, em que problem é o status HTTP do erro, 'tempo esgotado' ou 'sem conexão'.
+// Faz UM pedido ao Gemini (Interactions API).
+// Devolve { ok, text } ou { ok: false, problem, detail }, em que problem é o status HTTP,
+// 'tempo esgotado' ou 'sem conexão'.
 async function sendToGemini(model, systemInstruction, input, schema, timeoutMs) {
   const body = {
     model,
@@ -101,7 +115,7 @@ async function sendToGemini(model, systemInstruction, input, schema, timeoutMs) 
   }
 
   try {
-    const response = await fetch(GEMINI_URL, {
+    const response = await fetch(PROVIDERS.gemini.url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -112,33 +126,76 @@ async function sendToGemini(model, systemInstruction, input, schema, timeoutMs) 
       signal: AbortSignal.timeout(timeoutMs), // desiste se demorar demais
     });
     const data = await response.json().catch(() => null);
-    return { ok: response.ok, data, problem: response.status };
+    if (!response.ok) return { ok: false, problem: response.status, detail: JSON.stringify(data) };
+
+    // A resposta vem em "steps" (passos). O texto final está nos passos do tipo "model_output".
+    const text = (data?.steps || [])
+      .filter((step) => step.type === 'model_output')
+      .flatMap((step) => step.content || [])
+      .filter((item) => item.type === 'text')
+      .map((item) => item.text)
+      .join('');
+    return { ok: true, text: text.trim() };
   } catch (error) {
     // AbortSignal.timeout gera um erro chamado "TimeoutError"; outros erros são falha de rede
-    return { ok: false, data: null, problem: error.name === 'TimeoutError' ? 'tempo esgotado' : 'sem conexão' };
+    return { ok: false, problem: error.name === 'TimeoutError' ? 'tempo esgotado' : 'sem conexão' };
   }
 }
 
-// A resposta vem em "steps" (passos). O texto final está nos passos do tipo "model_output".
-function getText(data) {
-  const text = (data?.steps || [])
-    .filter((step) => step.type === 'model_output')
-    .flatMap((step) => step.content || [])
-    .filter((item) => item.type === 'text')
-    .map((item) => item.text)
-    .join('');
+// Faz UM pedido a um serviço no formato do OpenAI (Groq e OpenRouter).
+async function sendToOpenAICompatible(provider, model, systemInstruction, input, schema, timeoutMs) {
+  // Converte o nosso "input" para o formato de mensagens do OpenAI.
+  // A imagem vai como "data URL": data:image/jpeg;base64,AAAA...
+  const parts = typeof input === 'string' ? [{ type: 'text', text: input }] : input;
+  const content = parts.map((part) => (part.type === 'image'
+    ? { type: 'image_url', image_url: { url: `data:${part.mime_type};base64,${part.data}` } }
+    : { type: 'text', text: part.text }));
 
-  if (!text) {
-    console.error('Gemini não devolveu texto:', JSON.stringify(data));
-    throw httpError(502, 'A IA não devolveu resposta. Tente de novo.');
-  }
-  return text;
-}
+  // Para JSON: liga o "modo JSON" e descreve o formato nas instruções
+  // (nem todo modelo gratuito aceita receber o esquema separado, mas todos entendem a descrição)
+  const instructions = schema
+    ? `${systemInstruction}\n\nResponda SOMENTE com um objeto JSON válido, sem nenhum texto antes ou depois, seguindo este JSON Schema:\n${JSON.stringify(schema)}`
+    : systemInstruction;
 
-// Converte a resposta da IA em objeto (quando pedimos JSON)
-function parseJson(text) {
+  const body = {
+    model,
+    messages: [
+      { role: 'system', content: instructions },
+      { role: 'user', content },
+    ],
+  };
+  if (schema) body.response_format = { type: 'json_object' };
+
   try {
-    return JSON.parse(text);
+    const response = await fetch(PROVIDERS[provider].url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env[PROVIDERS[provider].keyName]}`,
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) return { ok: false, problem: response.status, detail: JSON.stringify(data) };
+
+    // Alguns modelos "pensam em voz alta" entre <think> e </think>: tiramos essa parte
+    const text = String(data?.choices?.[0]?.message?.content || '')
+      .replace(/<think>[\s\S]*?<\/think>/g, '')
+      .trim();
+    return { ok: true, text };
+  } catch (error) {
+    return { ok: false, problem: error.name === 'TimeoutError' ? 'tempo esgotado' : 'sem conexão' };
+  }
+}
+
+// Converte a resposta da IA em objeto (quando pedimos JSON).
+// Alguns modelos embrulham o JSON em ```json ... ```: pegamos só do primeiro "{" ao último "}".
+function parseJson(text) {
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  try {
+    return JSON.parse(start >= 0 && end > start ? text.slice(start, end + 1) : text);
   } catch (error) {
     console.error('A IA não devolveu um JSON válido:', text);
     throw httpError(502, 'A IA respondeu num formato inesperado. Tente de novo.');
@@ -223,7 +280,7 @@ async function extractQuestion(imageBase64, mimeType, existingNames) {
     `Assuntos: ${existingNames.subjects.join('; ') || '(nenhum ainda)'}`,
   ].join('\n');
 
-  const text = await callGemini({
+  const text = await callAI({
     systemInstruction: EXTRACTION_RULES,
     input: [
       { type: 'image', data: imageBase64, mime_type: mimeType },
@@ -290,7 +347,7 @@ async function answerDoubt({ question, correctLetter, selectedLetter, history, m
   }
   lines.push('', `NOVA DÚVIDA DO ESTUDANTE: ${message}`);
 
-  return callGemini({ systemInstruction: DOUBT_RULES, input: lines.join('\n') });
+  return callAI({ systemInstruction: DOUBT_RULES, input: lines.join('\n') });
 }
 
 // ------------------------------------------------------------
@@ -317,7 +374,7 @@ const ANALYSIS_RULES = `Você é um orientador de estudos para concursos públic
 Nunca invente números, disciplinas ou assuntos que não estejam nos dados. "respostas" são tentativas (a mesma questão pode ser respondida mais de uma vez); para falar de questões, use o campo "questoes_diferentes_resolvidas". Escreva em português natural, para o próprio estudante ("você"), e nunca copie os nomes técnicos dos campos no texto (escreva "questões diferentes", e não "questoes_diferentes_resolvidas"). Quando uma disciplina ou assunto tiver menos de 3 respostas, avise que o resultado ainda é pouco confiável. Cada item das listas deve ser uma frase curta.`;
 
 async function analyzePerformance(data) {
-  const text = await callGemini({
+  const text = await callAI({
     systemInstruction: ANALYSIS_RULES,
     input: `Dados de desempenho do estudante (gerados a partir do banco de dados):\n${JSON.stringify(data, null, 2)}`,
     schema: ANALYSIS_SCHEMA,
@@ -334,7 +391,7 @@ async function analyzePerformance(data) {
 }
 
 module.exports = {
-  callGemini,
+  callAI,
   checkDailyLimit,
   saveInteraction,
   extractQuestion,

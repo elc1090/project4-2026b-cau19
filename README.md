@@ -195,9 +195,9 @@ resolva a questão:
 No teste com uma questão de porcentagem sem gabarito no print, a IA deixou o campo vazio, mesmo sendo uma
 conta fácil. Outro detalhe aprendido: o modelo principal do plano gratuito (`gemini-3.8-flash`) respondeu
 "sobrecarregado" (HTTP 503) várias vezes, e em horário de pico **todos** os modelos gratuitos recusaram ou
-demoraram quase 1 minuto. Por isso o servidor tenta até 5 modelos gratuitos, um depois do outro (até 60 s
-para cada um e no máximo 2 minutos no total), e avisa o usuário se nenhum responder. A solução definitiva é
-ativar o faturamento da chave: pedidos pagos têm prioridade e custam frações de centavo.
+demoraram quase 1 minuto. Por isso o servidor usa **três serviços gratuitos** em sequência (Groq, OpenRouter e Gemini): se um estiver
+sobrecarregado, sem cota ou demorar mais de 60 s, tenta o próximo, por no máximo 2 minutos, e avisa o
+usuário se nenhum responder.
 
 ## Tecnologias
 
@@ -213,7 +213,7 @@ ativar o faturamento da chave: pedidos pagos têm prioridade e custam frações 
   - o servidor roda o `db/schema.sql` ao ligar (`create table if not exists`), então as tabelas nascem sozinhas no Render
 - **Google OAuth 2.0** (fluxo *authorization code*), escrito com o `fetch` do Node, sem biblioteca de login
 - `jsonwebtoken` (crachá JWT) + `cookie-parser` (ler o cookie) + `dotenv` (variáveis de ambiente)
-- **Google Gemini** (plano gratuito) pela Interactions API, com `fetch` puro: leitura de imagens, saída estruturada em JSON, dúvidas e análise de desempenho
+- **IAs gratuitas com troca automática**, todas com `fetch` puro: **Groq** e **OpenRouter** (formato do OpenAI, modo JSON) e **Google Gemini** (Interactions API, saída estruturada). Usadas para ler imagens, tirar dúvidas e analisar o desempenho
 - Canvas do navegador para reduzir a imagem antes do envio (fotos de celular podem passar de 10 MB); a imagem **não é guardada**, só o texto extraído
 - Docker + Docker Compose (PostgreSQL local para desenvolvimento)
 - Render: Web Service (Node) + PostgreSQL, configurados manualmente pelo painel (sem blueprints)
@@ -261,7 +261,7 @@ ativar o faturamento da chave: pedidos pagos têm prioridade e custam frações 
 
 ```powershell
 docker compose up -d     # PostgreSQL local (container questoes-postgres, porta 5434)
-copy .env.example .env   # e preencha: JWT_SECRET, credenciais do Google e chave do Gemini
+copy .env.example .env   # e preencha: JWT_SECRET, credenciais do Google e chaves das IAs (Groq/OpenRouter/Gemini)
 npm install
 npm start                # http://localhost:3002 (as tabelas são criadas ao ligar)
 npm run db:exemplos -- seu@email.com   # 20 questões de exemplo (depois do 1º login com o Google)
@@ -280,7 +280,7 @@ banco de dados e problemas comuns) está em **[docs/GUIA.md](./docs/GUIA.md)**.
 - Docker Desktop (PostgreSQL 16)
 - Node.js 26 / npm
 - Git e GitHub
-- Google Cloud Console (credenciais OAuth) e Google AI Studio (chave do Gemini)
+- Google Cloud Console (credenciais OAuth), Google AI Studio (chave do Gemini), Groq Console e OpenRouter (chaves das outras IAs gratuitas)
 - Render (painel web)
 - Google Chrome em modo headless (testes automatizados da interface e gravação do GIF)
 
@@ -291,6 +291,7 @@ banco de dados e problemas comuns) está em **[docs/GUIA.md](./docs/GUIA.md)**.
 - [Documentação do PostgreSQL 16](https://www.postgresql.org/docs/16/): `FILTER`, `to_char`, `AT TIME ZONE`, `ILIKE`, `ON CONFLICT`
 - [Google Identity: OAuth 2.0 para aplicativos de servidor web](https://developers.google.com/identity/protocols/oauth2/web-server) e [OpenID Connect](https://developers.google.com/identity/openid-connect/openid-connect)
 - [Gemini API](https://ai.google.dev/gemini-api/docs): Interactions API, saída estruturada, entendimento de imagens, preços e limites do plano gratuito
+- [Groq: visão e limites do plano gratuito](https://console.groq.com/docs/vision) e [OpenRouter: limites dos modelos gratuitos](https://openrouter.ai/docs/api-reference/limits)
 - [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken) e [cookie-parser](https://github.com/expressjs/cookie-parser)
 - MDN: [Cookies HTTP (`HttpOnly`, `SameSite`)](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Cookies), [`<dialog>`](https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/dialog), [`canvas.toDataURL`](https://developer.mozilla.org/pt-BR/docs/Web/API/HTMLCanvasElement/toDataURL), [Fetch API](https://developer.mozilla.org/pt-BR/docs/Web/API/Fetch_API)
 - [OWASP: prevenção de XSS](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
