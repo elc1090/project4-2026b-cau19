@@ -9,8 +9,19 @@
 const pool = require('./database');
 
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
-const DEFAULT_MODEL = 'gemini-3.8-flash';      // estável e com plano gratuito (nov/2026)
-const BACKUP_MODEL = 'gemini-3.5-flash-lite';  // mais leve, também gratuito: usado quando o principal está sobrecarregado
+// Modelos do Gemini, na ordem em que são tentados (todos têm plano gratuito em nov/2026).
+// No plano gratuito o Google atende por último: em horário de pico um modelo pode recusar
+// ("sobrecarregado") ou demorar quase 1 minuto. Por isso o app tenta vários, um depois do outro.
+// A variável GEMINI_MODEL (opcional) coloca outro modelo em 1º lugar.
+const MODELS = [
+  'gemini-3.8-flash',      // o melhor, mas o mais disputado
+  'gemini-3.5-flash-lite', // o que mais respondeu nos testes (e o mais barato se houver faturamento)
+  'gemini-3.6-flash',
+  'gemini-3.1-flash-lite',
+  'gemini-4-hydrogen',
+];
+const ATTEMPT_TIMEOUT_MS = 60000; // cada modelo tem até 60 s para responder
+const TOTAL_TIME_MS = 120000;     // depois de 2 minutos tentando, desiste
 
 // Limite de usos por usuário a cada 24 horas. A cota gratuita do Gemini é do PROJETO
 // inteiro (compartilhada por todos os usuários), então ninguém pode gastá-la sozinho.
@@ -39,40 +50,46 @@ async function callGemini({ systemInstruction, input, schema }) {
     throw httpError(503, 'A IA não está configurada no servidor (falta a GEMINI_API_KEY). Veja o README.');
   }
 
-  // Ordem das tentativas: modelo principal -> modelo reserva -> reserva de novo, depois de 3 segundos.
-  // Só vale tentar de novo quando o Google responde "sobrecarregado" (503) ou "cota esgotada" (429);
-  // outros erros (ex.: chave inválida) não melhoram tentando de novo.
-  const mainModel = process.env.GEMINI_MODEL || DEFAULT_MODEL;
-  const attempts = mainModel === BACKUP_MODEL
-    ? [mainModel, mainModel]
-    : [mainModel, BACKUP_MODEL, BACKUP_MODEL];
-  let lastStatus = null;
+  // Lista sem repetidos: o GEMINI_MODEL (se existir) primeiro, depois os da lista MODELS
+  const models = [...new Set([process.env.GEMINI_MODEL, ...MODELS].filter(Boolean))];
+  const giveUpAt = Date.now() + TOTAL_TIME_MS;
+  let lastProblem = null;
 
-  for (let i = 0; i < attempts.length; i++) {
-    const model = attempts[i];
-    if (i === attempts.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 3000)); // última chance: espera um pouco antes
+  for (const model of models) {
+    const timeLeft = giveUpAt - Date.now();
+    if (timeLeft <= 0) break; // já tentou por 2 minutos
+
+    const result = await sendToGemini(model, systemInstruction, input, schema, Math.min(ATTEMPT_TIMEOUT_MS, timeLeft));
+    if (result.ok) {
+      if (model !== models[0]) console.log(`IA respondeu com o modelo reserva ${model}`);
+      return getText(result.data);
     }
-    const { response, data } = await sendToGemini(model, systemInstruction, input, schema);
-    if (response.ok) return getText(data);
 
     // O detalhe técnico vai para o terminal do servidor; o usuário recebe uma mensagem simples
-    console.error(`Gemini (${model}) respondeu ${response.status}:`, JSON.stringify(data));
-    lastStatus = response.status;
-    if (response.status !== 503 && response.status !== 429) break;
+    console.error(`Gemini (${model}) falhou: ${result.problem}`, result.data ? JSON.stringify(result.data) : '');
+    lastProblem = result.problem;
+    // Chave inválida ou sem permissão: trocar de modelo não adianta
+    if (result.problem === 401 || result.problem === 403) break;
   }
 
-  if (lastStatus === 429) {
+  if (lastProblem === 429) {
     throw httpError(429, 'A cota gratuita da IA acabou por enquanto. Tente novamente mais tarde.');
   }
-  if (lastStatus === 503) {
-    throw httpError(503, 'A IA está sobrecarregada no momento. Tente de novo em alguns instantes.');
+  if (lastProblem === 401 || lastProblem === 403) {
+    throw httpError(502, 'O Google recusou a chave da IA (confira a GEMINI_API_KEY no servidor).');
+  }
+  if (lastProblem === 'sem conexão') {
+    throw httpError(502, 'Não foi possível falar com a IA. Tente de novo.');
+  }
+  if (lastProblem === 503 || lastProblem === 500 || lastProblem === 'tempo esgotado') {
+    throw httpError(503, 'A IA gratuita está sobrecarregada agora. Tente de novo em alguns minutos.');
   }
   throw httpError(502, 'A IA recusou o pedido. Tente de novo (detalhes no terminal do servidor).');
 }
 
-// Faz UM pedido ao Gemini com o modelo indicado e devolve a resposta (sem interpretar)
-async function sendToGemini(model, systemInstruction, input, schema) {
+// Faz UM pedido ao Gemini com o modelo indicado.
+// Devolve { ok, data, problem }, em que problem é o status HTTP do erro, 'tempo esgotado' ou 'sem conexão'.
+async function sendToGemini(model, systemInstruction, input, schema, timeoutMs) {
   const body = {
     model,
     system_instruction: systemInstruction,
@@ -92,13 +109,13 @@ async function sendToGemini(model, systemInstruction, input, schema) {
         'Api-Revision': '2026-05-20', // versão da API usada nos exemplos da documentação
       },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(90000), // desiste depois de 90 segundos
+      signal: AbortSignal.timeout(timeoutMs), // desiste se demorar demais
     });
     const data = await response.json().catch(() => null);
-    return { response, data };
+    return { ok: response.ok, data, problem: response.status };
   } catch (error) {
-    console.error('Falha de conexão com o Gemini:', error.message);
-    throw httpError(502, 'Não foi possível falar com a IA. Tente de novo.');
+    // AbortSignal.timeout gera um erro chamado "TimeoutError"; outros erros são falha de rede
+    return { ok: false, data: null, problem: error.name === 'TimeoutError' ? 'tempo esgotado' : 'sem conexão' };
   }
 }
 

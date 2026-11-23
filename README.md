@@ -194,8 +194,10 @@ resolva a questão:
 
 No teste com uma questão de porcentagem sem gabarito no print, a IA deixou o campo vazio, mesmo sendo uma
 conta fácil. Outro detalhe aprendido: o modelo principal do plano gratuito (`gemini-3.8-flash`) respondeu
-"sobrecarregado" (HTTP 503) várias vezes. Por isso o servidor tenta o principal, depois um modelo mais leve
-(`gemini-3.5-flash-lite`) e, por último, o leve de novo após 3 segundos.
+"sobrecarregado" (HTTP 503) várias vezes, e em horário de pico **todos** os modelos gratuitos recusaram ou
+demoraram quase 1 minuto. Por isso o servidor tenta até 5 modelos gratuitos, um depois do outro (até 60 s
+para cada um e no máximo 2 minutos no total), e avisa o usuário se nenhum responder. A solução definitiva é
+ativar o faturamento da chave: pedidos pagos têm prioridade e custam frações de centavo.
 
 ## Tecnologias
 

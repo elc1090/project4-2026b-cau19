@@ -342,7 +342,7 @@ doubtForm.addEventListener('submit', async (event) => {
   const submitButton = doubtForm.querySelector('button');
   submitButton.disabled = true;
   appendMessage('user', escapeHtml(message));
-  const reply = appendMessage('ai', '<span class="muted"><span class="spinner"></span> A IA está pensando...</span>');
+  const reply = appendMessage('ai', '<span class="muted"><span class="spinner"></span> A IA está pensando... (pode levar até 1 minuto)</span>');
   doubtForm.reset();
 
   try {

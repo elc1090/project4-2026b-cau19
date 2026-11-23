@@ -104,7 +104,7 @@ analysisButton.addEventListener('click', async () => {
   analysisButton.disabled = true;
   analysisError.hidden = true;
   const previousText = analysisButton.textContent;
-  analysisButton.innerHTML = '<span class="spinner"></span> Analisando...';
+  analysisButton.innerHTML = '<span class="spinner"></span> Analisando (até 1 min)...';
   try {
     const data = await api('/api/stats/analysis', { method: 'POST' });
     renderAnalysis(data);

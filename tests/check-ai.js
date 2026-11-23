@@ -5,7 +5,7 @@ require('dotenv').config();
 const ai = require('../ai');
 
 async function main() {
-  console.log(`Modelo: ${process.env.GEMINI_MODEL || 'gemini-3.8-flash (padrão)'}`);
+  console.log('Testando a IA (o app tenta vários modelos gratuitos, na ordem da lista MODELS do ai.js)...');
   const text = await ai.callGemini({
     systemInstruction: 'Responda em português, em JSON.',
     input: 'Cumprimente o estudante e diga quanto é 2 + 2.',

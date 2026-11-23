@@ -90,7 +90,7 @@ function resizeImage(file) {
 
 processButton.addEventListener('click', async () => {
   processButton.disabled = true;
-  showStatus('Lendo a questão com IA... isso pode levar alguns segundos.', '', true);
+  showStatus('Lendo a questão com IA... no plano gratuito, pode levar até 1 minuto.', '', true);
   try {
     const image = await resizeImage(selectedFile);
     const result = await api('/api/questions/extract', { method: 'POST', body: { image } });

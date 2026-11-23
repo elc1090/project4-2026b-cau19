@@ -141,10 +141,31 @@ Sobre o plano gratuito do Gemini:
   análises (`DAILY_LIMITS` em [ai.js](../ai.js)).
 - **Privacidade:** no plano gratuito, o Google pode usar o conteúdo enviado para melhorar os produtos dele.
   Não envie dados pessoais para a IA.
-- **Modelo:** o padrão é o `gemini-3.8-flash`. Quando ele está sobrecarregado (503) ou sem cota (429), o app
-  tenta sozinho o `gemini-3.5-flash-lite`, que também é gratuito, e depois o mesmo modelo leve de novo, após
-  3 segundos. Para trocar o modelo principal, defina `GEMINI_MODEL` no `.env`. Os modelos gratuitos atuais
-  estão em https://ai.google.dev/gemini-api/docs/pricing.
+- **Modelos:** o app tenta, nesta ordem: `gemini-3.8-flash`, `gemini-3.5-flash-lite`, `gemini-3.6-flash`,
+  `gemini-3.1-flash-lite` e `gemini-4-hydrogen` (lista `MODELS` em [ai.js](../ai.js)).
+  - **Quando pula para o próximo:** se um modelo responder "sobrecarregado" (503), "sem cota" (429) ou
+    demorar mais de 60 s.
+  - **Quando desiste:** depois de 2 minutos no total, mostrando uma mensagem amigável.
+  - **Mudar o primeiro da lista:** defina `GEMINI_MODEL` no `.env`.
+  - **Modelos gratuitos atuais:** https://ai.google.dev/gemini-api/docs/pricing.
+
+### Se a IA gratuita estiver sempre "sobrecarregada"
+
+No plano gratuito, o Google atende por último. Em horário de pico, **todos** os modelos gratuitos podem
+recusar os pedidos, e nenhuma mudança no código resolve isso. A solução é ativar o faturamento **na mesma
+chave**, sem mudar o código:
+
+1. Em https://aistudio.google.com/apikey, clique em **Set up billing** (ou "Configurar faturamento") ao lado
+   do projeto da chave. Vincule uma conta de faturamento do Google Cloud (cartão). O projeto sobe para o
+   nível pago na hora.
+2. No Render, em **Environment**, crie `GEMINI_MODEL=gemini-3.5-flash-lite`. Ele é o modelo mais barato da
+   lista e já foi testado com o app. Assim ele vira o primeiro a ser tentado.
+3. Crie um **alerta de gasto**: Google Cloud Console → **Faturamento → Orçamentos e alertas** → um orçamento
+   pequeno (ex.: R$ 10) com avisos em 50%, 90% e 100%. Atenção: o alerta só **avisa**, não bloqueia.
+
+Custo estimado com o `gemini-3.5-flash-lite` pago (US$ 0,30 por milhão de tokens de entrada e US$ 2,50 por
+milhão de saída): cerca de US$ 0,002 a 0,006 por questão lida, ou seja, centavos para algumas dezenas de
+questões. No plano pago, o Google **não** usa o conteúdo enviado para treinar os modelos.
 
 ## Assinar o plano PRO (demonstração)
 
