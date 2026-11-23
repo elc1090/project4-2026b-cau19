@@ -8,7 +8,8 @@
     "dev": "node --watch server.js",
     "test": "node --test tests/api.test.js",
     "test:ia": "node tests/check-ai.js",
-    "db:reset": "node db/run-sql.js db/reset.sql"
+    "db:reset": "node db/run-sql.js db/reset.sql",
+    "db:exemplos": "node db/exemplos.js"
   },
   "engines": {
     "node": ">=20"

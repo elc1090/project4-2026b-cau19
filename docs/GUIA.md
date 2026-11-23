@@ -30,7 +30,9 @@ project4-2026b-cau19/
 ├── db/
 │   ├── schema.sql       ← estrutura das 5 tabelas (o servidor roda este arquivo ao ligar)
 │   ├── reset.sql        ← apaga todas as tabelas (só para recomeçar do zero)
-│   └── run-sql.js       ← roda um arquivo .sql (usado pelo npm run db:reset)
+│   ├── run-sql.js       ← roda um arquivo .sql (usado pelo npm run db:reset)
+│   ├── exemplos.js      ← coloca 20 questões de exemplo no banco (npm run db:exemplos)
+│   └── exemplos.json    ← as 20 questões de exemplo (inéditas, com gabarito e explicação)
 ├── public/              ← FRONTEND (tudo que o navegador baixa)
 │   ├── index.html       ← tela de login
 │   ├── dashboard.html   ← início: resumo e atalhos
@@ -215,6 +217,27 @@ Remove-Item Env:BASE_URL, Env:DATABASE_URL, Env:JWT_SECRET
 
 As variáveis definidas no terminal têm prioridade sobre o `.env`, porque o `dotenv` não sobrescreve o que já
 existe. A última linha apaga essas variáveis, para o terminal voltar a usar o banco local.
+
+### Questões de exemplo
+
+Para o banco não começar vazio, há 20 questões inéditas, com gabarito e explicação: Direito, Português,
+Matemática, Raciocínio Lógico e Informática. Entre no site com o Google pelo menos uma vez e rode:
+
+```powershell
+npm run db:exemplos -- seu@email.com
+```
+
+- **12 ficam como suas** (particulares): você vê e resolve mesmo no plano gratuito.
+- **8 são do autor de exemplo "Gabarito Exemplos"**, compartilhadas: só aparecem para quem é PRO. É assim que
+  dá para demonstrar o banco compartilhado.
+- Pode rodar de novo sem duplicar nada.
+
+Para colocar as questões no banco do **Render**, use a External Database URL antes do comando:
+
+```powershell
+$env:DATABASE_URL="postgres://... (External Database URL)"; npm run db:exemplos -- seu@email.com
+Remove-Item Env:DATABASE_URL
+```
 
 ### Recomeçar o banco do zero
 

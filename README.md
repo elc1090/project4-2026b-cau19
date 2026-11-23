@@ -264,6 +264,7 @@ docker compose up -d     # PostgreSQL local (container questoes-postgres, porta 
 copy .env.example .env   # e preencha: JWT_SECRET, credenciais do Google e chave do Gemini
 npm install
 npm start                # http://localhost:3002 (as tabelas são criadas ao ligar)
+npm run db:exemplos -- seu@email.com   # 20 questões de exemplo (depois do 1º login com o Google)
 npm test                 # (em outro terminal) testes de acesso da API
 npm run test:ia          # confere se a chave do Gemini funciona
 ```

@@ -1,0 +1,167 @@
+[
+  {
+    "is_shared": false,
+    "statement": "De acordo com o art. 6º da Constituição Federal de 1988, são direitos sociais, entre outros:",
+    "alternatives": [
+      "a propriedade, a herança e a liberdade de crença.",
+      "a educação, a saúde, a alimentação, o trabalho e a moradia.",
+      "o habeas corpus, o mandado de segurança e o habeas data.",
+      "a nacionalidade, a cidadania e o voto direto e secreto."
+    ],
+    "correct_letter": "B",
+    "explanation": "O art. 6º da CF/88 lista como direitos sociais a educação, a saúde, a alimentação, o trabalho, a moradia, o transporte, o lazer, a segurança, a previdência social, a proteção à maternidade e à infância e a assistência aos desamparados. Propriedade, herança e liberdade de crença são direitos individuais (art. 5º).",
+    "area": "Direito", "discipline": "Direito Constitucional", "subject": "Direitos e Garantias Fundamentais", "subsubject": "Direitos Sociais"
+  },
+  {
+    "is_shared": false,
+    "statement": "Conceder-se-á ________ para assegurar o conhecimento de informações relativas à pessoa do impetrante, constantes de registros ou bancos de dados de entidades governamentais ou de caráter público.\n\nA lacuna é corretamente preenchida por:",
+    "alternatives": ["habeas corpus", "mandado de injunção", "habeas data", "ação popular", "mandado de segurança"],
+    "correct_letter": "C",
+    "explanation": "É o texto do art. 5º, LXXII, \"a\", da CF/88: o habeas data serve para conhecer (e também retificar) informações sobre a própria pessoa em registros ou bancos de dados públicos.",
+    "area": "Direito", "discipline": "Direito Constitucional", "subject": "Remédios Constitucionais", "subsubject": "Habeas Data"
+  },
+  {
+    "is_shared": true,
+    "statement": "NÃO é um dos fundamentos da República Federativa do Brasil previstos no art. 1º da Constituição Federal:",
+    "alternatives": ["a soberania.", "a cidadania.", "a dignidade da pessoa humana.", "erradicar a pobreza e a marginalização.", "o pluralismo político."],
+    "correct_letter": "D",
+    "explanation": "Erradicar a pobreza e a marginalização é um OBJETIVO fundamental (art. 3º, III), não um fundamento. Os fundamentos (art. 1º) são: soberania, cidadania, dignidade da pessoa humana, valores sociais do trabalho e da livre iniciativa e pluralismo político.",
+    "area": "Direito", "discipline": "Direito Constitucional", "subject": "Princípios Fundamentais", "subsubject": "Fundamentos da República"
+  },
+  {
+    "is_shared": false,
+    "statement": "Julgue o item a seguir.\n\nSegundo a Constituição Federal, por determinação judicial, é permitido entrar na casa de alguém sem o consentimento do morador a qualquer hora do dia ou da noite.",
+    "alternatives": ["Certo", "Errado"],
+    "correct_letter": "B",
+    "explanation": "Art. 5º, XI: sem consentimento do morador, só se pode entrar na casa em caso de flagrante delito, desastre ou para prestar socorro (a qualquer hora) ou, por determinação judicial, SOMENTE DURANTE O DIA.",
+    "area": "Direito", "discipline": "Direito Constitucional", "subject": "Direitos e Garantias Fundamentais", "subsubject": "Inviolabilidade do Domicílio"
+  },
+  {
+    "is_shared": false,
+    "statement": "NÃO está expressamente previsto no caput do art. 37 da Constituição Federal o princípio da:",
+    "alternatives": ["legalidade.", "impessoalidade.", "razoabilidade.", "publicidade.", "eficiência."],
+    "correct_letter": "C",
+    "explanation": "O caput do art. 37 traz os princípios expressos legalidade, impessoalidade, moralidade, publicidade e eficiência (LIMPE). A razoabilidade é um princípio implícito na Constituição; ela aparece expressamente na Lei nº 9.784/1999 (art. 2º).",
+    "area": "Direito", "discipline": "Direito Administrativo", "subject": "Princípios da Administração Pública", "subsubject": "Princípios Expressos"
+  },
+  {
+    "is_shared": true,
+    "statement": "De acordo com a Lei nº 8.112/1990, o servidor empossado em cargo público tem quantos dias, contados da data da posse, para entrar em exercício?",
+    "alternatives": ["5 dias", "10 dias", "15 dias", "30 dias", "45 dias"],
+    "correct_letter": "C",
+    "explanation": "Art. 15, § 1º, da Lei nº 8.112/1990: o prazo para entrar em exercício é de 15 dias, contados da data da posse. Não confundir com o prazo da posse, que é de 30 dias contados da publicação do ato de provimento (art. 13, § 1º).",
+    "area": "Direito", "discipline": "Direito Administrativo", "subject": "Lei 8.112/1990", "subsubject": "Provimento e Exercício"
+  },
+  {
+    "is_shared": false,
+    "statement": "Julgue o item a seguir.\n\nA imperatividade é atributo presente em todos os atos administrativos, inclusive nos atos enunciativos, como certidões e atestados.",
+    "alternatives": ["Certo", "Errado"],
+    "correct_letter": "B",
+    "explanation": "A imperatividade (impor obrigações independentemente da concordância do particular) não existe nos atos enunciativos (certidões, atestados, pareceres) nem nos negociais (licenças, autorizações). O atributo presente em todos os atos é a presunção de legitimidade.",
+    "area": "Direito", "discipline": "Direito Administrativo", "subject": "Atos Administrativos", "subsubject": "Atributos"
+  },
+  {
+    "is_shared": true,
+    "statement": "Segundo a Lei nº 14.133/2021 (nova Lei de Licitações e Contratos), NÃO é modalidade de licitação:",
+    "alternatives": ["o pregão.", "a concorrência.", "a tomada de preços.", "o leilão.", "o diálogo competitivo."],
+    "correct_letter": "C",
+    "explanation": "O art. 28 da Lei nº 14.133/2021 prevê cinco modalidades: pregão, concorrência, concurso, leilão e diálogo competitivo. A tomada de preços e o convite existiam na antiga Lei nº 8.666/1993 e não foram mantidos.",
+    "area": "Direito", "discipline": "Direito Administrativo", "subject": "Licitações e Contratos", "subsubject": "Modalidades"
+  },
+  {
+    "is_shared": false,
+    "statement": "Assinale a alternativa em que o acento indicativo de crase foi empregado corretamente.",
+    "alternatives": ["Fomos à pé até a estação.", "Começou à chover no fim da tarde.", "Refiro-me à diretora do setor.", "Entreguei o relatório à ele."],
+    "correct_letter": "C",
+    "explanation": "\"Referir-se\" exige a preposição \"a\", e \"diretora\" é palavra feminina que aceita o artigo \"a\": a + a = à. Não há crase antes de palavra masculina (pé), de verbo (chover) nem de pronome pessoal (ele).",
+    "area": "Português", "discipline": "Língua Portuguesa", "subject": "Crase"
+  },
+  {
+    "is_shared": true,
+    "statement": "Assinale a frase que está de acordo com a norma-padrão quanto à concordância verbal.",
+    "alternatives": ["Fazem dez anos que trabalho aqui.", "Houveram muitos problemas na reunião.", "Faz dez anos que trabalho aqui.", "Existe muitas razões para isso.", "Vende-se casas na praia."],
+    "correct_letter": "C",
+    "explanation": "\"Fazer\" indicando tempo decorrido e \"haver\" no sentido de existir são impessoais e ficam no singular (faz dez anos; houve problemas). \"Existir\" concorda com o sujeito (existem muitas razões), e na voz passiva sintética o verbo concorda com o sujeito (vendem-se casas).",
+    "area": "Português", "discipline": "Língua Portuguesa", "subject": "Concordância Verbal"
+  },
+  {
+    "is_shared": false,
+    "statement": "Assinale a alternativa correta quanto à regência verbal, segundo a norma-padrão.",
+    "alternatives": ["Assistimos ao jogo ontem à noite.", "Prefiro mais cinema do que teatro.", "Obedeça o regulamento interno.", "Ele aspira o cargo de diretor."],
+    "correct_letter": "A",
+    "explanation": "\"Assistir\", no sentido de ver, exige a preposição \"a\" (assistimos ao jogo). \"Preferir\" rege \"a\" e não aceita \"mais... do que\" (prefiro cinema a teatro); \"obedecer\" exige \"a\" (obedeça ao regulamento); \"aspirar\", no sentido de desejar, também exige \"a\" (aspira ao cargo).",
+    "area": "Português", "discipline": "Língua Portuguesa", "subject": "Regência Verbal"
+  },
+  {
+    "is_shared": true,
+    "statement": "Assinale a frase em que a forma do \"porquê\" foi empregada corretamente.",
+    "alternatives": ["Não sei por que ele faltou à reunião.", "Ele faltou por que estava doente.", "Você faltou porque?", "Ninguém sabe o por quê da ausência."],
+    "correct_letter": "A",
+    "explanation": "\"Por que\" (separado e sem acento) é usado em perguntas diretas e indiretas, como em \"não sei por que ele faltou\". Em B o correto é \"porque\" (explicação); em C, \"por quê\" (no fim da frase); em D, \"porquê\" (substantivo, acompanhado de artigo).",
+    "area": "Português", "discipline": "Língua Portuguesa", "subject": "Ortografia", "subsubject": "Uso dos Porquês"
+  },
+  {
+    "is_shared": false,
+    "statement": "Um capital de R$ 5.000,00 foi aplicado a juros simples, à taxa de 1% ao mês, durante 8 meses. O valor dos juros obtidos foi de:",
+    "alternatives": ["R$ 350,00", "R$ 400,00", "R$ 450,00", "R$ 500,00"],
+    "correct_letter": "B",
+    "explanation": "Nos juros simples, J = C × i × t = 5.000 × 0,01 × 8 = R$ 400,00.",
+    "area": "Matemática", "discipline": "Matemática Financeira", "subject": "Juros Simples"
+  },
+  {
+    "is_shared": false,
+    "statement": "Uma mercadoria que custava R$ 200,00 teve um aumento de 10% e, em seguida, um desconto de 10% sobre o novo preço. O preço final da mercadoria é:",
+    "alternatives": ["R$ 196,00", "R$ 198,00", "R$ 200,00", "R$ 202,00"],
+    "correct_letter": "B",
+    "explanation": "200 × 1,10 = 220 e 220 × 0,90 = 198. Um aumento e um desconto de mesmo percentual não se anulam: o resultado final é 1,1 × 0,9 = 0,99 do valor inicial.",
+    "area": "Matemática", "discipline": "Matemática Básica", "subject": "Porcentagem"
+  },
+  {
+    "is_shared": true,
+    "statement": "Seis operários, trabalhando no mesmo ritmo, constroem um muro em 10 dias. Quantos dias quatro operários, com o mesmo ritmo, levariam para construir o mesmo muro?",
+    "alternatives": ["12", "14", "15", "18"],
+    "correct_letter": "C",
+    "explanation": "Número de operários e de dias são grandezas inversamente proporcionais: 6 × 10 = 4 × x, logo x = 60 ÷ 4 = 15 dias.",
+    "area": "Matemática", "discipline": "Matemática Básica", "subject": "Regra de Três"
+  },
+  {
+    "is_shared": false,
+    "statement": "A negação da proposição \"Se chove, então a rua fica molhada\" é:",
+    "alternatives": ["Se não chove, então a rua não fica molhada.", "Chove e a rua não fica molhada.", "Não chove ou a rua fica molhada.", "Não chove e a rua fica molhada."],
+    "correct_letter": "B",
+    "explanation": "A negação de \"se P, então Q\" é \"P e não Q\". A alternativa C é equivalente à própria condicional (não P ou Q), e não à sua negação.",
+    "area": "Raciocínio Lógico", "discipline": "Lógica Proposicional", "subject": "Negação de Proposições"
+  },
+  {
+    "is_shared": true,
+    "statement": "Uma proposição logicamente equivalente a \"Se estudo, então sou aprovado\" é:",
+    "alternatives": ["Se sou aprovado, então estudo.", "Se não estudo, então não sou aprovado.", "Se não sou aprovado, então não estudo.", "Estudo e não sou aprovado."],
+    "correct_letter": "C",
+    "explanation": "A contrapositiva (se não Q, então não P) é equivalente à condicional original. A alternativa A é a recíproca e a B é a inversa, que não são equivalentes; a D é a negação.",
+    "area": "Raciocínio Lógico", "discipline": "Lógica Proposicional", "subject": "Equivalências Lógicas"
+  },
+  {
+    "is_shared": false,
+    "statement": "Em uma planilha do Microsoft Excel, a célula A1 contém o valor 6,5. Qual será o resultado da fórmula =SE(A1>=7;\"Aprovado\";\"Reprovado\")?",
+    "alternatives": ["Aprovado", "Reprovado", "6,5", "#VALOR!"],
+    "correct_letter": "B",
+    "explanation": "A função SE testa a condição A1>=7. Como 6,5 é menor que 7, a condição é falsa e a função devolve o terceiro argumento: \"Reprovado\".",
+    "area": "Informática", "discipline": "Informática Básica", "subject": "Planilhas Eletrônicas"
+  },
+  {
+    "is_shared": false,
+    "statement": "A técnica em que o golpista envia mensagens que se passam por uma instituição confiável, como um banco, para induzir a vítima a informar senhas e dados pessoais é chamada de:",
+    "alternatives": ["phishing.", "firewall.", "backup.", "worm.", "criptografia."],
+    "correct_letter": "A",
+    "explanation": "Phishing é a \"pescaria\" de dados por meio de mensagens falsas. Firewall e criptografia são mecanismos de proteção, backup é cópia de segurança e worm é um programa malicioso que se espalha sozinho pela rede.",
+    "area": "Informática", "discipline": "Segurança da Informação", "subject": "Golpes e Ameaças"
+  },
+  {
+    "is_shared": true,
+    "statement": "Julgue o item a seguir.\n\nO protocolo HTTPS utiliza, por padrão, a porta 443 e protege a comunicação entre o navegador e o servidor por meio de criptografia (TLS).",
+    "alternatives": ["Certo", "Errado"],
+    "correct_letter": "A",
+    "explanation": "O HTTPS é o HTTP sobre TLS e usa a porta 443 por padrão. O HTTP sem criptografia usa a porta 80.",
+    "area": "Informática", "discipline": "Redes de Computadores", "subject": "Protocolos"
+  }
+]
