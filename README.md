@@ -46,20 +46,20 @@ PostgreSQL, publicado no Render, reaproveitando a estrutura do Projeto 3.
 
 ### Processo
 
-> Esta seção, como o restante do README, foi escrita com ajuda da IA, com autorização da professora, a partir
-> do histórico real do desenvolvimento.
+> O desenvolvimento contou com um assistente de IA (Claude Code), e este README foi escrito com ajuda dele, com
+> autorização da professora.
 
-**Ponto de partida: requisitos antes do código.** Comecei o Projeto 4 entregando ao assistente de IA (Claude
-Code, no VS Code) um documento de requisitos detalhado: login com Google, cadastro de questões a partir de prints
-com IA, banco de questões com filtros, dúvidas com IA, desempenho e um plano PRO. Como sou iniciante em backend,
+**Ponto de partida: requisitos antes do código.** Comecei o Projeto 4 escrevendo um documento de requisitos
+detalhado: login com Google, cadastro de questões a partir de prints com IA, banco de questões com filtros,
+dúvidas com IA, desempenho e um plano PRO. Como sou iniciante em backend,
 defini restrições claras:
 - as mesmas tecnologias dos projetos anteriores (HTML, CSS e JavaScript puro, Express e PostgreSQL no Render);
 - código simples e comentado, com poucas dependências;
 - trabalho em 11 etapas, com a minha aprovação entre elas;
 - o Projeto 3 serviria só de referência e não podia ser alterado.
 
-**Etapa 1: analisar o Projeto 3 e planejar.** A primeira etapa não teve código. A IA analisou o Projeto 3 e montou
-um plano dizendo:
+**Etapa 1: analisar o Projeto 3 e planejar.** A primeira etapa não teve código, só a análise do Projeto 3 e um
+plano dizendo:
 - o que reaproveitar: Express 5, `pg`, `dotenv`, `jsonwebtoken`, o middleware `requireAuth`, o `escapeHtml`, o
   estilo dos testes, o Docker e o deploy manual no Render;
 - o que sairia: o `bcrypt`, já que com login Google não existe senha;
@@ -69,12 +69,10 @@ Revisei e aprovei a estrutura de pastas e o banco com 5 tabelas. Também respond
 com custo zero, compartilhamento (qualquer usuário pode compartilhar questões, mas só o PRO vê as dos outros) e a
 única dependência nova, o `cookie-parser`.
 
-**Uma mudança de rumo.** No Projeto 3 eu trabalhava no "modo mentor": a IA explicava, eu escolhia entre escrever ou
-deixar ela escrever, e registrava tudo num diário de estudo. No Projeto 4 comecei assim, com as etapas 1 e 2 uma de
-cada vez. Mas eu estava sem tempo e decidi deixar a IA escrever o código das etapas 3 a 11 de uma vez. O meu papel
-passou a ser decidir, configurar as contas (Google Cloud, Google AI Studio, Groq, OpenRouter e Render) e conferir o
-resultado. Sei que isso diminuiu o que aprendi fazendo. Para compensar, pedi uma comparação requisito por
-requisito com o Projeto 3 e estudei o código de autenticação e de autorização.
+**Divisão de papéis.** Eu defini os requisitos e as restrições, tomei as decisões, configurei as contas (Google
+Cloud, Google AI Studio, Groq, OpenRouter e Render) e verifiquei o resultado com testes. A implementação do código
+foi feita pelo assistente de IA. Para dominar o que foi entregue, estudei o código de autenticação e de autorização
+e comparei o projeto, requisito por requisito, com o Projeto 3.
 
 **Login com Google.** O login foi feito sem biblioteca, com `fetch`: o servidor manda o navegador para o Google,
 recebe um `code` e troca esse código pelo perfil da pessoa. Aprendi por que o crachá (JWT) não podia mais ficar no
@@ -96,9 +94,8 @@ Na configuração apareceram dois problemas:
   questão era apagada no banco, mas o cartão continuava na tela. A causa: o `pg` devolve os ids do tipo `bigint`
   como texto (`'4'`), e a comparação com o número `4` falhava. A solução foi uma linha no `database.js`.
 
-**A IA gratuita: a parte que mais deu trabalho.** Eu achava que o meu plano Pro do Claude servia para a IA do app,
-mas descobri que a assinatura vale para o chat e que a API é um produto separado, cobrado por uso. Como eu
-precisava de custo zero, começamos pelo Gemini, que tem plano gratuito. A documentação dele tinha mudado: havia
+**A IA gratuita: a parte que mais deu trabalho.** Eu precisava de custo zero, então comecei pelo Gemini, que tem
+plano gratuito. A documentação dele tinha mudado: havia
 uma API nova, e os modelos antigos seriam desligados em dezembro.
 
 No primeiro teste com a minha chave, o modelo principal respondia "sobrecarregado" (erro 503). Quando testei o
@@ -128,7 +125,7 @@ servidor · HTTP 403"* para quem é gratuito. O plano PRO, que no início era li
 virou um botão "Assinar PRO" demonstrativo, com o aviso de que nenhum pagamento é feito. A proteção continua no
 servidor, que lê o plano do banco a cada pedido.
 
-**Verificação e deploy.** Como a maior parte do código foi escrita pela IA, verificar era o mais importante:
+**Verificação e deploy.** Verificar foi a parte mais importante:
 - 19 testes automáticos de acessos permitidos e não permitidos;
 - testes num navegador automatizado, com capturas de tela no computador e no celular;
 - testes com a IA de verdade, lendo imagens de questões.
@@ -149,9 +146,8 @@ decisões:
 **O que eu levo deste projeto.**
 - A diferença entre **autenticação** (quem é você: Google, JWT e `requireAuth`) e **autorização** (o que você
   pode: ser o autor, o plano lido do banco, a regra `CAN_SEE` no SQL).
-- Uma assinatura de chat e uma API de IA são produtos diferentes.
 - Planos gratuitos são instáveis, e um app que depende deles precisa de reserva.
-- Código gerado por IA precisa ser testado: foram os testes que acharam os bugs.
+- Código precisa ser testado: foram os testes que acharam os bugs.
 
 ### Trechos de código
 
@@ -379,9 +375,8 @@ banco de dados e problemas comuns) está em **[docs/GUIA.md](./docs/GUIA.md)**.
 ### Ambiente de desenvolvimento
 
 - VS Code (Windows 10)
-- Claude Code (extensão do VS Code, modelo Claude Opus 5.5): agente de IA que analisou o Projeto 3, propôs o
-  plano de etapas e, a meu pedido, implementou o código, os testes, a documentação técnica e o GIF, e escreveu
-  este README (com autorização da professora)
+- Claude Code (extensão do VS Code): assistente de IA usado na implementação e na escrita deste README (com
+  autorização da professora)
 - Docker Desktop (PostgreSQL 16)
 - Node.js 26 / npm
 - Git e GitHub
@@ -406,7 +401,6 @@ banco de dados e problemas comuns) está em **[docs/GUIA.md](./docs/GUIA.md)**.
 - [Google Fonts](https://fonts.google.com/): Bricolage Grotesque, Instrument Sans e JetBrains Mono
 - [Projeto 3 (Dino Game)](https://github.com/elc1090/project3-2026b-cau19): base para a estrutura do servidor, do banco, dos testes e do deploy
 - GIF gravado com Chrome headless + `gif-encoder-2` e `pngjs` (usados só numa pasta temporária, fora do projeto)
-- Claude Code (Anthropic): assistente de IA, conforme descrito em "Ambiente de desenvolvimento"
 
 ---
 Projeto entregue para a disciplina de [Desenvolvimento de Software para a Web](http://github.com/andreainfufsm/elc1090-2026b) em 2026b
