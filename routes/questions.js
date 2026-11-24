@@ -1,5 +1,5 @@
 // ============================================================
-// ROTAS DAS QUESTÕES: cadastrar, listar, filtrar, editar, apagar, responder e tirar dúvidas
+// ROTAS DAS QUESTÕES: ler imagem com IA, cadastrar, listar, filtrar, editar, apagar e responder
 // ============================================================
 // Todas as rotas usam requireAuth (só para quem está logado).
 // O id e o plano do usuário vêm SEMPRE de req.user (lido do banco), nunca do navegador.

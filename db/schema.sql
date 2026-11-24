@@ -59,14 +59,15 @@ create table if not exists answers (
 
 create index if not exists answers_user_id_idx on answers (user_id);
 
--- Conversas com a IA. Servem para mostrar dúvidas anteriores e para limitar o uso diário.
+-- Registro de cada leitura de imagem feita pela IA, usado para limitar o uso diário.
+-- (Os tipos 'duvida' e 'analise' são de uma versão anterior, que tinha dúvidas e análise com IA.)
 -- "on delete set null": se a questão for apagada, o registro fica, só perde o vínculo.
 create table if not exists ai_interactions (
   id bigint generated always as identity primary key,
   user_id bigint not null references users(id) on delete cascade,
   question_id bigint references questions(id) on delete set null,
   kind text not null check (kind in ('extracao', 'duvida', 'analise')),
-  user_message text,                       -- dúvida digitada (vazio na extração e na análise)
+  user_message text,                       -- texto enviado pelo usuário (vazio na leitura de imagem)
   ai_response text,                        -- resposta da IA (texto ou JSON)
   created_at timestamptz not null default now()
 );
